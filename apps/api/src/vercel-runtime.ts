@@ -6,6 +6,7 @@ import {
   parseCapabilityPepper,
 } from "@animal-helper/event-store";
 import postgres from "postgres";
+import { Headers, Request, Response } from "undici";
 
 import { loadAdminConfig } from "./admin/config.js";
 import { loadApiEnv } from "./env.js";

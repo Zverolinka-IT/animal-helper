@@ -1,8 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { type Request as FetchRequest } from "undici";
+
 import { vercelFetch, vercelNode } from "../src/vercel-runtime.js";
 
-const isWebRequest = (value: object): value is Request =>
+const isWebRequest = (value: object): value is FetchRequest =>
   "headers" in value &&
   typeof (value as { headers?: { get?: unknown } }).headers?.get === "function";
 
@@ -11,9 +13,9 @@ const isWebRequest = (value: object): value is Request =>
 // (ADR 0009). Rewrites keep the browser path; this handler reads that URL.
 // Local `vercel dev` calls the Node listener. Production may call either shape.
 export default function vercelHandler(
-  request: Request | IncomingMessage,
+  request: FetchRequest | IncomingMessage,
   response?: ServerResponse,
-): Promise<Response> | Promise<void> {
+): Promise<void> | ReturnType<typeof vercelFetch> {
   if (response !== undefined && !isWebRequest(request)) {
     return vercelNode(request, response);
   }
