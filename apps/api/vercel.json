@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "NODE_ENV=development pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @animal-helper/backoffice build && rm -rf static && mkdir -p static && cp -R ../backoffice/dist/. static/",
+  "buildCommand": "pnpm --filter @animal-helper/backoffice build && rm -rf static && mkdir -p static api && cp -R ../backoffice/dist/. static/ && pnpm exec esbuild src/vercel-entry.ts --bundle --platform=node --format=esm --target=node24 --outfile=api/index.mjs --external:postgres --external:@simplewebauthn/server",
   "outputDirectory": "static",
   "regions": ["fra1"],
   "trailingSlash": false,
   "functions": {
-    "api/index.ts": {
+    "api/index.mjs": {
       "maxDuration": 15
     }
   },

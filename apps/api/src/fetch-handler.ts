@@ -1,5 +1,3 @@
-import { Headers, type Request, Response } from "undici";
-
 import { apiError } from "./errors.js";
 import type { ApiRequest, ApiResponse } from "./handler.js";
 
