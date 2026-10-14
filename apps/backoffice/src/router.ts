@@ -12,7 +12,7 @@ export const router = createRouter({
     { path: "/", name: "login", component: LoginScreen },
     { path: "/queue", name: "queue", component: QueueScreen },
     { path: "/queue/:streamId", name: "case", component: CaseScreen },
-    { path: "/guidance", name: "guidance", component: GuidanceScreen },
+    { path: "/guide", name: "guidance", component: GuidanceScreen },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
 });

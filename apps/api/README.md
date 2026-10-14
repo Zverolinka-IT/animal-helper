@@ -1,7 +1,8 @@
 # API
 
-Local Node HTTP command and status boundary. Production can later move this
-composition root to Supabase Edge Functions without changing the contracts.
+Local Node HTTP command and status boundary. Production runs this same handler
+as a Vercel Function in `fra1`, on one origin with the backoffice build so admin
+cookies stay first-party.
 
 The API is the sole public domain-command boundary. It:
 

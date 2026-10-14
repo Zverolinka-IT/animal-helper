@@ -5,5 +5,6 @@
     "rootDir": "src",
     "types": ["node"]
   },
-  "exclude": ["test/**/*.ts", "src/admin/bootstrap-cli.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/admin/bootstrap-cli.ts"]
 }

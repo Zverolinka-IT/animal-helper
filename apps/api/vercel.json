@@ -1,0 +1,42 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "NODE_ENV=development pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @animal-helper/backoffice build && rm -rf static && mkdir -p static && cp -R ../backoffice/dist/. static/",
+  "outputDirectory": "static",
+  "regions": ["fra1"],
+  "trailingSlash": false,
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 15
+    }
+  },
+  "rewrites": [
+    { "source": "/health", "destination": "/api" },
+    { "source": "/commands", "destination": "/api" },
+    { "source": "/status", "destination": "/api" },
+    { "source": "/admin", "destination": "/api" },
+    { "source": "/admin/:path*", "destination": "/api" },
+    { "source": "/guidance", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "cache-control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "cache-control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
+}

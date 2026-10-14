@@ -150,7 +150,7 @@ chosen. They work. They are not the design.
 | `/thank-you` | thanks                    | Public status chrome.                                        |
 
 `form_snapshot` v1 still accepts only `injured` and `stray`. The backoffice
-matrix at `http://localhost:5174/guidance` previews the same resolver, including
+matrix at `http://localhost:5174/guide` previews the same resolver, including
 matrix-only W25.
 
 ## Start here

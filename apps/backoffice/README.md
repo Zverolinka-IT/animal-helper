@@ -41,7 +41,7 @@ case page reads location, form snapshot, and contact from private records.
 Newsletter consent is not shown. Admin notes, actions, referrals, and
 inspections are stored in `ah.admin_case_work`.
 
-**Matica sprievodcu** (`/guidance`) browses the code-owned
+**Matica sprievodcu** (`/guide`) browses the code-owned
 `@animal-helper/guidance` catalog and edits injured copy. Save writes a draft;
 publish makes that revision the public `GET /guidance` payload. Preview uses the
 same resolver as the customer walk. Stray and cruelty stay read-only. Rollback,

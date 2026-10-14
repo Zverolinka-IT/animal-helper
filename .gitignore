@@ -19,3 +19,4 @@ coverage/
 test-results/
 playwright-report/
 apps/customer/.eslintcache
+apps/api/static/
