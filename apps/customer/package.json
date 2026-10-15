@@ -30,7 +30,7 @@
     "overlayscrollbars": "2.13.0",
     "overlayscrollbars-vue": "0.5.9",
     "vue": "3.5.41",
-    "vue-router": "5.2.0",
+    "vue-router": "5.4.0",
     "@animal-helper/guidance": "workspace:*"
   },
   "devDependencies": {
