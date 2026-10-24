@@ -78,6 +78,11 @@ Removing a secret from Git or redeploying without rotation is insufficient.
 
 ## Data recovery
 
+[ADR 0010](../architecture/decisions/0010-case-personal-data-erasure.md) records
+the current erasure limits and proposes the privacy ledger and restore barrier
+needed to prevent backups from reintroducing erased case content. Those controls
+are proposed work, not an implemented restore guarantee.
+
 Neon Free keeps a short restore window (hours, not days) and may scale to zero.
 If used for a pilot, the operator must explicitly accept that older accidental
 deletion/corruption may be unrecoverable. Launch adds a longer restore window.

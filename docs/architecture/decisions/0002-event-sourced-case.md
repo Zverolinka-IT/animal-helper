@@ -26,3 +26,6 @@ The case state machine is explicit domain code, not a generic workflow engine.
 History and retry semantics are first-class. Projection rebuilds and
 event-schema evolution require discipline. Some facts disappear after private
 records are purged, by design.
+
+[ADR 0010](0010-case-personal-data-erasure.md) records the implemented purge
+behavior and proposes the complete erasure, redaction and restore workflow.

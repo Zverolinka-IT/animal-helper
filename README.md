@@ -77,6 +77,7 @@ Start with:
 - [Architecture overview](docs/architecture/overview.md)
 - [Administered guidance flow](docs/architecture/administered-guidance-flow.md)
 - [Passkey admin authentication](docs/architecture/decisions/0009-passkey-admin-auth.md)
+- [Case personal data erasure and redaction](docs/architecture/decisions/0010-case-personal-data-erasure.md)
 - [UI cookbook](docs/product/ui-cookbook.md)
 - [Case matrices and screen map](docs/product/case-matrices/README.md)
 - [GDPR and legal-risk briefing](docs/legal/gdpr-and-legal-risks.md)
