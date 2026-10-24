@@ -1,0 +1,121 @@
+Let's run a pass over this project repository for architecture cleanness, adherence to principles + completness (especially admin app/client app completness)
+
+---
+
+Let's fix those issues one by one
+
+---
+
+Can you deploy everything to production ?
+
+---
+
+Can we make the admin at leas bit nicer UI wise/aligned with actual app UI. Don't spend too much effort on that, but it's super ugly now, let's make it acceptable
+
+---
+
+Hmm, let's now think about how to best onboard admin accounts in production, in the easiest and most secure way.
+
+---
+
+Good, let's bootstrap first account ([REDACTED_EMAIL]) in production
+
+---
+
+Perfect, I'm in. Now how can I invite other email accounts ? How can they create their own passkeys ?
+
+---
+
+Do we have a UI for this in the Admin ? Adding another user email, generating set-up link for them ?
+
+---
+
+Let's do that.
+
+---
+
+Perfect, done. Let's do a ass over UI screens, I remember there were some unfinished fields which were supposed to be filled from server, can you find that ?
+
+---
+
+Let's do that, whenever something which should be supplied by admin is missing, fill-that admin functionality as well
+
+---
+
+Perfect. Let's do one architecture pass over the app, rating it for cleannes/event-sourcing purity and logical consistency
+
+---
+
+Good overview. Did you also spot any logic bugs, potential race conditions, etc. ?
+
+---
+
+Perfect, let's fix all of those issues
+
+---
+
+Did we push the fixes into production ?
+
+---
+
+Let's deploy all of them
+
+---
+
+Let's make a new auth request to vercel, this one expired
+
+---
+
+Authorized
+
+---
+
+Let's add some more capabilities to the app, first thing, we need to be able to filter according to case-filling user email (if entered).
+
+---
+
+Is the filtering implementation shared with the existing (assigned person) email filter ? Does it use partial/fuzzy search ?
+
+---
+
+Let's make sure this is consistent for all searches within admin and we use fuzzy matching
+
+---
+
+Perfect, let's continue with next improvement, contact list for volunteers/vets. Currently, admins (in the case matrix) can edit primary and secondary contacts, correct ?
+
+---
+
+So the first thing I would like to change is to make the contact/s length dynamic, eq anything from 1 to N, is it possible with current screen designs, or would we require new designs ?
+
+---
+
+Perfect, let's implement this
+
+---
+
+What about volunteers/contacts administration in admin, can we support some basic csv/xls upload ? They have some initial resource they would like to upload.
+
+---
+
+Good, can we now add administration over veterinary clinics, in the same vein as administration over volunteer contacts is made ? With csv/xls import as well
+
+---
+
+Another thing, there is a discrepancy between flows implemented in customer app (all 5 of them), while admin only offers managing first 3 of them, and only management of the first one seems to truly work, with walkthrough, etc. Can you have a look at it ?
+
+---
+
+Would you be able to discover enough information for finishing all flows from this figma design (should be source of truth) ? https://www.figma.com/design/Y6LY2VRpRoxNKNJEQACH6Y/%F0%9F%90%BB-Zvierac%C3%AD-ombudsman?node-id=908-8091
+
+---
+
+Let's install the figma plugin
+
+---
+
+How should I do it ?
+
+---
+
+Figma plugin is installed. When I quit this chat, how can I resume it ?
