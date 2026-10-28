@@ -33,19 +33,19 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@prettier/plugin-pug": "3.4.2",
-    "@types/node": "24.13.3",
-    "@vitest/eslint-plugin": "1.6.27",
-    "eslint": "10.8.0",
+    "@prettier/plugin-pug": "3.6.0",
+    "@types/node": "24.19.2",
+    "@vitest/eslint-plugin": "1.6.28",
+    "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-playwright": "2.12.0",
-    "eslint-plugin-vue": "10.11.0",
+    "eslint-plugin-playwright": "2.12.1",
+    "eslint-plugin-vue": "10.11.1",
     "eslint-plugin-vue-pug": "1.0.0-alpha.6",
-    "prettier": "3.9.6",
+    "prettier": "3.9.10",
     "prettier-plugin-organize-imports": "4.3.0",
     "prettier-plugin-tailwindcss": "0.8.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.65.0",
-    "vitest": "4.1.10"
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
   }
 }
