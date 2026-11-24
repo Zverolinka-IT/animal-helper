@@ -1,7 +1,7 @@
 import { bundledPublicGuidance } from '@animal-helper/guidance'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
-async function chooseDaniel(page: import('@playwright/test').Page) {
+async function chooseDaniel(page: Page) {
   await page.route('**/guidance', route => route.fulfill({ json: bundledPublicGuidance() }))
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?fixture=clean')
