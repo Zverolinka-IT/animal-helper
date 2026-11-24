@@ -52,9 +52,10 @@ function isHeading(line: string) {
 
 function splitLeadHeading(line: string) {
   const match = line.match(/^(.+?)\s+([A-ZÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ][a-záäčďéíĺľňóôŕšťúýž].*)$/)
-  if (!match) return [line]
-  const heading = match[1].trim()
-  return isHeading(heading) ? [heading, match[2].trim()] : [line]
+  const heading = match?.[1]?.trim()
+  const body = match?.[2]?.trim()
+  if (!heading || !body || !isHeading(heading)) return [line]
+  return [heading, body]
 }
 
 function sentenceCase(line: string) {

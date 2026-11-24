@@ -179,7 +179,7 @@ export const whoHelpedThankYouFixture: ThankYouView = {
   outcome: 'resolved',
   screen: 'W39a',
   copy: { ...thankYouFixture.copy, title: 'Ďakujeme za vašu pomoc', description: '' },
-  contactIntro: pendingThankYouFixture.contactIntro,
+  contactIntro: pendingThankYouFixture.contactIntro!,
   reasons: {
     title: 'Kto pomohol zvieraťu?',
     input: 'radio',
