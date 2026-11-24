@@ -18,6 +18,6 @@
   },
   "dependencies": {
     "@animal-helper/domain": "workspace:*",
-    "zod": "4.3.6"
+    "zod": "4.6.5"
   }
 }
