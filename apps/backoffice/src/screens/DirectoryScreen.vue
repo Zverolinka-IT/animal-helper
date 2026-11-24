@@ -182,7 +182,9 @@ const select = (item: ContactDirectoryEntry, force = false) => {
   longitude.value = item.coordinates?.longitude.toString() ?? "";
   coverage.value = item.coverage.kind;
   districtsText.value =
-    item.coverage.kind === "districts" ? item.coverage.districts.join("\n") : "";
+    item.coverage.kind === "districts"
+      ? item.coverage.districts.join("\n")
+      : "";
   boundary.value =
     item.coverage.kind === "boundary"
       ? JSON.stringify(item.coverage.geometry, null, 2)

@@ -110,7 +110,7 @@ async function act(action: InstructionAction) {
           ) {{ block.availability.label }}
         p(
           v-if="block.note",
-          class="whitespace-pre-line px-5 pb-4"
+          class="px-5 pb-4 whitespace-pre-line"
         ) {{ block.note }}
         a(
           v-if="block.website && safeContactHref(block.website.href, 'web')",
