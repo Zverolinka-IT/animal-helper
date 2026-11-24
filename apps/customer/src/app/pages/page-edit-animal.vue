@@ -5,7 +5,7 @@ import PageIntro from '../components/page-intro.vue'
 import { computed, ref, useId } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAutocomplete } from '@/libs/use-autocomplete'
-import { catalogueAnimals, searchAnimals, type CatalogueAnimal } from '../animal-catalogue'
+import { catalogueAnimals, reportedSpeciesId, searchAnimals, type CatalogueAnimal } from '../animal-catalogue'
 import { previewSession } from '../preview-flow'
 import { flowActions } from '../flow-client'
 import type { AnimalBranch } from './fixtures/animal-groups'
@@ -35,7 +35,7 @@ function select(animal: CatalogueAnimal) {
   const session = previewSession.value
   if (!session || !props.view.allowedActions.includes('search')) return
   const target = flowActions.identify(
-    { kind: 'species', path: animal.path, speciesId: animal.id },
+    { kind: 'species', path: animal.path, speciesId: reportedSpeciesId(animal) },
     props.view.backTarget
   )
   void router.push({ name: target })

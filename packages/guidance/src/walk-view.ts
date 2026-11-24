@@ -15,9 +15,10 @@ import {
   nextCustomerPath,
 } from "./resolve.js";
 import { customerImplementedWalk, customerWalkPath } from "./screens.js";
+import { contactOptionPath, isContactOptionInstruction } from "./slots.js";
 
 export type WalkFacts = {
-  situationType: "injured" | "stray";
+  situationType: SituationKey;
   kindKey?: string;
   hasDraft: boolean;
   hasLocation: boolean;
@@ -43,7 +44,7 @@ const parseResolved = (value: unknown): WalkView => {
   return parsed.data;
 };
 
-const detailsKinds = (situationType: "injured" | "stray"): WalkKindOption[] => {
+const detailsKinds = (situationType: SituationKey): WalkKindOption[] => {
   if (situationType !== "injured") {
     return [];
   }
@@ -62,6 +63,7 @@ const guideItems = (
   facts: WalkFacts,
   screenKeys: readonly string[],
   guidance: PublicGuidance,
+  path?: string,
 ): WalkGuideItem[] => {
   if (facts.kindKey === undefined) {
     return [];
@@ -69,29 +71,35 @@ const guideItems = (
 
   const kindItems = guidance.kinds[facts.kindKey]?.items ?? [];
   const keys = screenKeys.filter(isScreenKey);
-  return itemsForScreens(kindItems, keys).map((item) => {
-    const slots: Record<string, string> = {};
-    for (const [slotKey, slotValue] of Object.entries(item.slots)) {
-      if (typeof slotValue === "string") {
-        slots[slotKey] = slotValue;
+  return itemsForScreens(kindItems, keys)
+    .filter(
+      (item) =>
+        !isContactOptionInstruction(item.instructionKey) ||
+        contactOptionPath(item.instructionKey) === path,
+    )
+    .map((item) => {
+      const slots: Record<string, string> = {};
+      for (const [slotKey, slotValue] of Object.entries(item.slots)) {
+        if (typeof slotValue === "string") {
+          slots[slotKey] = slotValue;
+        }
       }
-    }
 
-    return {
-      screenKey: item.screenKey,
-      instructionKey: item.instructionKey,
-      polarity: item.polarity,
-      slots,
-      ...(item.action === undefined
-        ? {}
-        : {
-            action: {
-              kind: item.action.kind,
-              targetKey: item.action.targetKey,
-            },
-          }),
-    };
-  });
+      return {
+        screenKey: item.screenKey,
+        instructionKey: item.instructionKey,
+        polarity: item.polarity,
+        slots,
+        ...(item.action === undefined
+          ? {}
+          : {
+              action: {
+                kind: item.action.kind,
+                targetKey: item.action.targetKey,
+              },
+            }),
+      };
+    });
 };
 
 const situationView = (facts: WalkFacts): WalkView =>
@@ -102,7 +110,7 @@ const situationView = (facts: WalkFacts): WalkView =>
     screenKeys: [...customerImplementedWalk.situation.matrixScreens],
     allowedCommands: ["create_draft"],
     fieldErrors: fieldErrorsOf(facts),
-    props: { situations: ["injured", "stray"] },
+    props: { situations: ["injured", "stray", "cruelty", "other"] },
   });
 
 const locationView = (facts: WalkFacts): WalkView =>
@@ -185,12 +193,12 @@ const guideView = (
     props: {
       kindKey,
       revisionId: guidance.revisionId,
-      items: guideItems(facts, screenKeys, guidance),
+      items: guideItems(facts, screenKeys, guidance, path),
     },
   });
 };
 
-const walkSituation = (situationType: "injured" | "stray"): SituationKey =>
+const walkSituation = (situationType: SituationKey): SituationKey =>
   situationType;
 
 export const walkViewForPath = (
@@ -220,6 +228,7 @@ export const walkViewForPath = (
   const step = customerWalkableSteps(
     walkSituation(facts.situationType),
     facts.kindKey,
+    facts.kindKey ? guidance.kinds[facts.kindKey]?.items : undefined,
   ).find((entry) => entry.path === path);
   if (step === undefined) {
     return undefined;
@@ -252,6 +261,7 @@ export const resumeWalkView = (
       customerWalkPath("details"),
       walkSituation(facts.situationType),
       facts.kindKey,
+      facts.kindKey ? guidance.kinds[facts.kindKey]?.items : undefined,
     );
     if (afterDetails === undefined) {
       return contactView(facts);
@@ -271,6 +281,7 @@ export const walkViewAfterPath = (
     completedPath,
     walkSituation(facts.situationType),
     facts.kindKey,
+    facts.kindKey ? guidance.kinds[facts.kindKey]?.items : undefined,
   );
   if (nextPath === undefined) {
     return undefined;

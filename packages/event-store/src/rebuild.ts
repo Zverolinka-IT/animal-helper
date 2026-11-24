@@ -18,34 +18,39 @@ export type RebuildResult =
 export const rebuildCaseProjections = async (
   sql: Queryable,
   streamId: string,
-): Promise<RebuildResult> => {
-  const recordedEvents = await loadRecordedEvents(sql, streamId);
-  const streamValidation = validateEventStream(recordedEvents);
+): Promise<RebuildResult> =>
+  sql.begin(async (transaction) => {
+    const tx = transaction as unknown as Queryable;
+    const locked =
+      await tx`select stream_id from ah.streams where stream_id = ${streamId}::uuid for update`;
+    if (locked.length === 0) return { ok: true, eventCount: 0 };
+    const recordedEvents = await loadRecordedEvents(tx, streamId);
+    const streamValidation = validateEventStream(recordedEvents);
 
-  if (!streamValidation.ok) {
-    return { ok: false, error: { code: "STREAM_INVALID" } };
-  }
+    if (!streamValidation.ok) {
+      return { ok: false, error: { code: "STREAM_INVALID" } };
+    }
 
-  const decoded = decodeRecordedCaseEvents(recordedEvents);
+    const decoded = decodeRecordedCaseEvents(recordedEvents);
 
-  if (!decoded.ok) {
-    return { ok: false, error: { code: "EVENT_DECODE_FAILED" } };
-  }
+    if (!decoded.ok) {
+      return { ok: false, error: { code: "EVENT_DECODE_FAILED" } };
+    }
 
-  const state = foldCaseEvents(decoded.value);
-  const createdAt = new Date(
-    recordedEvents.at(0)?.occurredAt ?? new Date().toISOString(),
-  );
-  const updatedAt = new Date(
-    recordedEvents.at(-1)?.occurredAt ?? createdAt.toISOString(),
-  );
+    const state = foldCaseEvents(decoded.value);
+    const createdAt = new Date(
+      recordedEvents.at(0)?.occurredAt ?? new Date().toISOString(),
+    );
+    const updatedAt = new Date(
+      recordedEvents.at(-1)?.occurredAt ?? createdAt.toISOString(),
+    );
 
-  await projectCase(sql, {
-    streamId,
-    state,
-    createdAt,
-    updatedAt,
+    await projectCase(tx, {
+      streamId,
+      state,
+      createdAt,
+      updatedAt,
+    });
+
+    return { ok: true, eventCount: recordedEvents.length };
   });
-
-  return { ok: true, eventCount: recordedEvents.length };
-};

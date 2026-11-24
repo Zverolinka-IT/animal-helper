@@ -20,6 +20,7 @@ export type FetchLike = (
     headers: Readonly<Record<string, string>>;
     body?: string;
     credentials: "omit";
+    signal?: AbortSignal;
   },
 ) => Promise<{
   status: number;
@@ -57,6 +58,7 @@ export const createFetchTransport = (options: {
         },
         body: JSON.stringify(command),
         credentials: "omit",
+        signal: AbortSignal.timeout(12_000),
       });
 
       return readJson(response);
@@ -69,6 +71,7 @@ export const createFetchTransport = (options: {
           authorization,
         },
         credentials: "omit",
+        signal: AbortSignal.timeout(12_000),
       });
 
       return readJson(response);

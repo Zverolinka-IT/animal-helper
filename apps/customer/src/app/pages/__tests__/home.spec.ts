@@ -16,6 +16,8 @@ describe('fixture-driven homepage', () => {
     expect(wrapper.findAll('.customer-home__choice')).toHaveLength(1)
   })
   it('emits only permitted actions and never implies a submitted report', async () => {
+    expect(homeFixture.props.situations.map(item => item.id)).toEqual(['injured', 'stray', 'cruelty', 'other'])
+    expect(homeFixture.allowedActions).not.toContain('start-dead')
     const view = structuredClone(homeFixture)
     view.allowedActions = ['start-injured']
     const wrapper = mount(PageHome, { props: { view }, global: { components: { BaseIcon } } })

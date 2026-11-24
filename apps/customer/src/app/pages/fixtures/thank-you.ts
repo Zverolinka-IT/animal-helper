@@ -1,9 +1,13 @@
-// Working presentation model. Submission and consent processing are not connected.
+import type { ReportOutcome } from '@animal-helper/contracts'
+// Presentation variants; injured and stray reports submit through the command client.
 import type { FormValidation } from '../../contracts/validation'
+const contactExplanation =
+  'Zanechajte nám kontakt, aby sme od vás mohli v prípade potreby získať ďalšie informácie na pomoc zvieraťu. Bez vášho súhlasu ho neposkytneme zasahujúcim orgánom.'
 export type ThankYouView = {
+  outcome?: ReportOutcome['status']
   validation?: FormValidation
   values?: Record<string, string>
-  screen: 'W24' | 'W25' | 'W26' | 'W38' | 'W39'
+  screen: 'W24' | 'W25' | 'W26' | 'W38' | 'W39' | 'W39a'
   locale: string
   layout: { showMenu: boolean }
   backTarget: string
@@ -26,6 +30,7 @@ export type ThankYouView = {
   help?: { title: string; description: string; action: { label: string; target: 'W14' | 'W15'; enabled: boolean } }
   reasons?: {
     title: string
+    input?: 'radio'
     options: {
       id: string
       label: string
@@ -37,12 +42,12 @@ function createUnsuccessfulThankYou(): ThankYouView {
   return {
     ...thankYouFixture,
     screen: 'W25',
+    outcome: 'unresolved',
     backTarget: 'W22',
     copy: { ...thankYouFixture.copy, title: 'Ďakujeme za vašu snahu', description: '' },
     contactIntro: {
       title: 'Vaša pomoc sa nemusí skončiť týmto prípadom.',
-      description:
-        'Nechajte nám e-mail a budeme s vami zdieľať informácie, ako pomáhať zvieratám. Váš kontakt bez súhlasu nikomu nesprístupníme.'
+      description: contactExplanation
     },
     reasons: {
       title: 'Prečo sa nepodarilo pomôcť zvieraťu?',
@@ -73,11 +78,8 @@ function createUnsuccessfulThankYou(): ThankYouView {
   }
 }
 export const thankYouFixture: ThankYouView = {
-  values: { email: 'nespravna-adresa' },
-  validation: {
-    fieldErrors: { email: ['Zadajte platnú e-mailovú adresu, napríklad meno@example.sk.'] }
-  },
   screen: 'W24',
+  outcome: 'resolved',
   locale: 'sk',
   layout: { showMenu: false },
   backTarget: 'W15',
@@ -87,8 +89,7 @@ export const thankYouFixture: ThankYouView = {
   copy: {
     back: 'Späť',
     title: 'Ďakujeme za vašu pomoc',
-    description:
-      'Zanechajte nám kontakt a dáme vám vedieť, ako prípad dopadol. Ak kontakt neuvediete, hlásenie odošleme anonymne.',
+    description: contactExplanation,
     preview: 'Lokálna ukážka formulára. Použite iba testovacie údaje; nič sa neodosiela ani neukladá na server.',
     submit: 'Odoslať a ukončiť',
     unavailable: 'Odosielanie zatiaľ nie je napojené. Hlásenie ani kontaktné údaje neboli odoslané.'
@@ -96,7 +97,7 @@ export const thankYouFixture: ThankYouView = {
   fields: [
     {
       id: 'name',
-      label: 'Meno a priezvisko (nepovinné)',
+      label: 'Meno a priezvisko',
       placeholder: 'Zadajte meno a priezvisko',
       type: 'text',
       autocomplete: 'name',
@@ -105,16 +106,16 @@ export const thankYouFixture: ThankYouView = {
     },
     {
       id: 'phone',
-      label: 'Telefónne číslo (nepovinné)',
+      label: 'Telefónne číslo',
       placeholder: '+421 xxx xxx xxx',
       type: 'tel',
       autocomplete: 'tel',
       required: false,
-      maxLength: 40
+      maxLength: 32
     },
     {
       id: 'email',
-      label: 'E-mail (nepovinné)',
+      label: 'E-mail',
       placeholder: 'email@email.sk',
       type: 'email',
       autocomplete: 'email',
@@ -125,23 +126,26 @@ export const thankYouFixture: ThankYouView = {
   consents: [
     {
       id: 'share-contact',
-      label:
-        'Súhlasím s postúpením môjho kontaktu zasahujúcim orgánom (štátna veterina alebo iný štátny orgán). Môže to urýchliť riešenie prípadu.',
+      label: 'Súhlasím s postúpením môjho kontaktu zasahujúcim orgánom. Môže to urýchliť riešenie prípadu.',
       required: false
     },
     {
       id: 'newsletter',
-      label: 'Chcem dostávať pravidelné informácie o Zverolinke a o tom, ako pomáhať zvieratám.',
+      label: 'Chcem dostávať pravidelné informácie o pomoci zvieratám a príležitostne aj o možnostiach darcovstva.',
       required: false
     }
   ]
 }
 export const unsuccessfulThankYouFixture = createUnsuccessfulThankYou()
+const { outcome: _resolvedOutcome, ...contactThankYouFixture } = thankYouFixture
 export const pendingThankYouFixture: ThankYouView = {
-  ...thankYouFixture,
+  ...contactThankYouFixture,
   screen: 'W26',
   copy: { ...thankYouFixture.copy, title: 'Uzatvorenie prípadu', description: '' },
-  contactIntro: unsuccessfulThankYouFixture.contactIntro!,
+  contactIntro: {
+    title: 'Vaša pomoc sa nemusí skončiť týmto prípadom.',
+    description: 'Nechajte nám e-mail a budeme s vami zdieľať informácie, ako pomáhať zvieratám.'
+  },
   reasons: {
     title: 'Ako situácia dopadla?',
     options: [
@@ -160,7 +164,7 @@ export const pendingThankYouFixture: ThankYouView = {
   }
 }
 export const helpThankYouFixture: ThankYouView = {
-  ...thankYouFixture,
+  ...contactThankYouFixture,
   screen: 'W38',
   copy: { ...thankYouFixture.copy, description: '' },
   contactIntro: unsuccessfulThankYouFixture.contactIntro!,
@@ -170,11 +174,34 @@ export const helpThankYouFixture: ThankYouView = {
     action: { label: 'Zobraziť možnosti pomoci', target: 'W14', enabled: true }
   }
 }
+export const whoHelpedThankYouFixture: ThankYouView = {
+  ...contactThankYouFixture,
+  outcome: 'resolved',
+  screen: 'W39a',
+  copy: { ...thankYouFixture.copy, title: 'Ďakujeme za vašu pomoc', description: '' },
+  contactIntro: pendingThankYouFixture.contactIntro,
+  reasons: {
+    title: 'Kto pomohol zvieraťu?',
+    input: 'radio',
+    options: [
+      { id: 'municipality', label: 'Obec / mesto alebo osoba schválená na odchyt' },
+      { id: 'clinic', label: 'Veterinár / klinika' },
+      { id: 'volunteer', label: 'Dobrovoľník Zverolinky' },
+      { id: 'other-person', label: 'Iná osoba' },
+      { id: 'self', label: 'Pomohol/pomohla som sám/sama' },
+      {
+        id: 'other',
+        label: 'Iné',
+        description: { placeholder: 'Opíšte, kto pomohol', required: false, maxLength: 2000 }
+      }
+    ]
+  }
+}
 export const noUpdateThankYouFixture: ThankYouView = {
-  ...thankYouFixture,
+  ...contactThankYouFixture,
   screen: 'W39',
   copy: { ...thankYouFixture.copy, description: '' },
-  contactIntro: unsuccessfulThankYouFixture.contactIntro!
+  contactIntro: pendingThankYouFixture.contactIntro!
 }
 export const thankYouShowcaseFixture: ThankYouView = {
   ...thankYouFixture,
@@ -191,13 +218,10 @@ export const thankYouShowcaseFixture: ThankYouView = {
   }))
 }
 export const thankYouFixtures: ThankYouView[] = [
-  thankYouShowcaseFixture,
-  {
-    ...thankYouShowcaseFixture,
-    screen: 'W25',
-    copy: { ...thankYouShowcaseFixture.copy, title: unsuccessfulThankYouFixture.copy.title }
-  },
+  thankYouFixture,
+  unsuccessfulThankYouFixture,
   pendingThankYouFixture,
   helpThankYouFixture,
-  noUpdateThankYouFixture
+  noUpdateThankYouFixture,
+  whoHelpedThankYouFixture
 ]

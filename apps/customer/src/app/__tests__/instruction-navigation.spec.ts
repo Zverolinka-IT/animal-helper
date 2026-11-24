@@ -33,3 +33,24 @@ describe('instruction history navigation', () => {
     }
   )
 })
+
+it('distinguishes repeated contact screens by their option path and replaces unrelated history', () => {
+  const back = vi.fn(),
+    replace = vi.fn()
+  const router = {
+    options: { history: { state: { back: '/contacts/first' } } },
+    resolve: () => ({ name: 'contact-option', path: '/contacts/first' }),
+    back,
+    replace
+  } as unknown as Router
+  backWithinFlow(router, '/contacts/first', ['/contacts/first'])
+  expect(back).toHaveBeenCalledOnce()
+  router.options.history.state.back = '/contacts/unrelated'
+  const unrelated = {
+    ...router,
+    resolve: () => ({ name: 'contact-option', path: '/contacts/unrelated' })
+  } as unknown as Router
+  backWithinFlow(unrelated, '/contacts/first', ['/contacts/first'])
+  expect(replace).toHaveBeenCalledWith({ path: '/contacts/first' })
+  expect(back).toHaveBeenCalledOnce()
+})

@@ -1,7 +1,13 @@
 export const CATALOG_KEY_PATTERN = /^[a-z][a-z0-9_]*$/;
 export const CATALOG_KEY_MAX_LENGTH = 64;
 
-export const situationKeys = ["injured", "stray", "cruelty"] as const;
+export const situationKeys = [
+  "injured",
+  "stray",
+  "dead",
+  "cruelty",
+  "other",
+] as const;
 export type SituationKey = (typeof situationKeys)[number];
 
 export const groupKeys = ["domestic", "farm", "wildlife", "exotic"] as const;
@@ -60,16 +66,8 @@ export const authorityKeys = [
 ] as const;
 export type AuthorityKey = (typeof authorityKeys)[number];
 
-export const contactKeys = [
-  "municipality_capture",
-  "vet_clinic",
-  "vet_exotic",
-  "sop_rescue",
-  "hunting_manager_or_opk",
-  "emergency_112",
-  "conditional_sop_if_wild_pigeon",
-  "dynamic_sop_or_municipality",
-] as const;
+export { guidanceContactKeys as contactKeys } from "@animal-helper/contracts";
+import { guidanceContactKeys as contactKeys } from "@animal-helper/contracts";
 export type ContactKey = (typeof contactKeys)[number];
 
 export const warningFrames = ["w13", "w14", "dynamic"] as const;

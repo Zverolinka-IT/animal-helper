@@ -1,5 +1,11 @@
 # Customer
 
+All five report types now submit through the command API and survive reloads. See
+[the current guidance architecture](../../docs/architecture/administered-guidance-flow.md#all-report-flows-2026-10-22)
+for branching, admin configuration, publication pinning, and retry behavior. The older preview notes below describe the
+initial UI build; they are not the current persistence contract. The map still uses explicit sample locations and device
+coordinates, and binary media upload/AI identification remain separate.
+
 Vue 3 + TypeScript + Pug + Tailwind 4. Technical foundation, not the finished reporting flow or Figma design. Tool
 versions match the monorepo.
 
@@ -151,6 +157,12 @@ Injured and stray starts, location, animal details and contact submission go thr
 `src/app/walk/adapter.ts` and persist public case status on the API. The walk view still chooses the next screen for
 those commands. Dead, cruelty and other situations stay on the local fixture provider. No generic form engine is
 introduced.
+
+Persisted injured walks render the fetched or bundled species guidance in the advice, contact, self-help and
+advice-drawer views. Subsequent guidance navigation uses the shared resolver and skips disabled or empty optional steps;
+secondary contact W19 has a renderer. Empty or incomplete public guidance is rejected in favour of bundled content. The
+remaining fixture branches cannot report successful submission: their submit action explains that sending is
+unavailable.
 
 In development, `/?fixture=draft` selects the W01 draft-card fixture (Figma `2120:13168`). Plain `/` has no draft. The
 optional `props.draft` supplies the summary, progress and actions. Resume opens the fixture location step; Complete only

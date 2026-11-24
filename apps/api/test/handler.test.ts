@@ -9,6 +9,8 @@ import {
   syntheticAttachPrivateDataCommand,
   syntheticCreateDraftCommand,
   syntheticFormSnapshot,
+  syntheticLocationPayload,
+  syntheticContactPayload,
   syntheticSubmitDraftCommand,
 } from "@animal-helper/contracts";
 import { parseCapabilityPepper } from "@animal-helper/event-store";
@@ -57,6 +59,72 @@ const commandIds = () => ({
 });
 
 describe("API handler", () => {
+  it("recovers a lost submit acknowledgement with the now read-only capability", async () => {
+    const { handle } = createHarness();
+    const store = createMemoryCaseStore();
+    let loseReply = true;
+    const submittedIds: string[] = [];
+    const session = createCaseSession({
+      store,
+      now: () => now,
+      transport: {
+        async sendCommand({ authorization, command }) {
+          const response = await request(handle, {
+            method: "POST",
+            pathname: "/commands",
+            authorization,
+            body: command,
+          });
+          if (command.type === "submit_draft") {
+            submittedIds.push(command.commandId);
+            if (loseReply) {
+              loseReply = false;
+              throw new Error("synthetic lost response");
+            }
+          }
+          return response;
+        },
+        getStatus: ({ authorization }) =>
+          request(handle, {
+            method: "GET",
+            pathname: "/status",
+            authorization,
+          }),
+      },
+    });
+    expect((await session.openDraft()).ok).toBe(true);
+    await session.attachLocation(syntheticLocationPayload);
+    await session.attachFormSnapshot(syntheticFormSnapshot);
+    await session.attachContact(syntheticContactPayload);
+    expect(await session.submit()).toMatchObject({
+      ok: false,
+      error: { code: "NETWORK_FAILURE" },
+    });
+    expect(await session.flush()).toMatchObject({
+      ok: true,
+      value: {
+        durability: "received",
+        pendingCount: 0,
+        mutationAllowed: false,
+      },
+    });
+    expect(submittedIds).toHaveLength(2);
+    expect(submittedIds[0]).toBe(submittedIds[1]);
+    const stored = await store.load();
+    if (stored === undefined) throw new Error("missing local case");
+    const fresh = await request(handle, {
+      method: "POST",
+      pathname: "/commands",
+      authorization: `Capability ${stored.capabilityToken}`,
+      body: {
+        ...syntheticSubmitDraftCommand,
+        streamId: stored.streamId,
+        commandId: randomUUID(),
+        expectedVersion: stored.expectedVersion,
+      },
+    });
+    expect(fresh.status).toBe(404);
+  });
   it("hides admin routes when admin is not configured", async () => {
     const { handle } = createHarness();
     const session = await request(handle, {
@@ -195,12 +263,34 @@ describe("API handler", () => {
     expect(attached.status).toBe(200);
     expect(JSON.stringify(attached.body)).not.toContain("synthetic-case-notes");
 
+    for (const [offset, record] of [
+      { kind: "location", privatePayload: syntheticLocationPayload },
+      { kind: "form_snapshot", privatePayload: syntheticFormSnapshot },
+      { kind: "contact", privatePayload: syntheticContactPayload },
+    ].entries()) {
+      const response = await request(handle, {
+        method: "POST",
+        pathname: "/commands",
+        authorization: authorizationFor(capability),
+        body: {
+          ...syntheticAttachPrivateDataCommand,
+          ...record,
+          streamId: ids.streamId,
+          correlationId: ids.correlationId,
+          commandId: randomUUID(),
+          privateRecordId: randomUUID(),
+          expectedVersion: 2 + offset,
+        },
+      });
+      expect(response.status).toBe(200);
+    }
     const submitted = await request(handle, {
       method: "POST",
       pathname: "/commands",
       authorization: authorizationFor(capability),
       body: {
         ...syntheticSubmitDraftCommand,
+        expectedVersion: 5,
         streamId: ids.streamId,
         correlationId: ids.correlationId,
       },
@@ -564,6 +654,8 @@ describe("HTTP adapter", () => {
     expect(opened.ok).toBe(true);
     const attached = await session.attachFormSnapshot(syntheticFormSnapshot);
     expect(attached.ok).toBe(true);
+    await session.attachLocation(syntheticLocationPayload);
+    await session.attachContact(syntheticContactPayload);
     const submitted = await session.submit();
     expect(submitted.ok).toBe(true);
     if (!submitted.ok) {

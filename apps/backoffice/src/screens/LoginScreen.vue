@@ -62,7 +62,7 @@ const continueWithPasskey = async () => {
 </script>
 
 <template>
-  <section>
+  <section class="login-card">
     <h1>
       {{
         bootstrapToken === undefined
@@ -74,8 +74,13 @@ const continueWithPasskey = async () => {
     <p v-if="bootstrapToken" class="muted">
       {{ t("backoffice.login.setupHelp") }}
     </p>
-    <p v-if="error" class="error">{{ error }}</p>
-    <button type="button" :disabled="pending" @click="continueWithPasskey">
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <button
+      class="button-primary"
+      type="button"
+      :disabled="pending"
+      @click="continueWithPasskey"
+    >
       {{
         pending
           ? t("backoffice.login.waiting")

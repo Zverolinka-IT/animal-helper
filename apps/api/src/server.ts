@@ -8,7 +8,7 @@ import { apiError } from "./errors.js";
 import type { ApiHandlerOptions, ApiResponse } from "./handler.js";
 import { createApiHandler } from "./handler.js";
 
-const MAX_BODY_BYTES = 65_536;
+import { bodyLimit } from "./body-limit.js";
 
 const headerValue = (
   value: string | string[] | undefined,
@@ -24,6 +24,10 @@ const readBody = async (
   request: IncomingMessage,
 ): Promise<{ ok: true; value: unknown } | { ok: false }> => {
   request.setEncoding("utf8");
+  const limit = bodyLimit(
+    request.method ?? "GET",
+    new URL(request.url ?? "/", "http://localhost").pathname,
+  );
   let body = "";
 
   for await (const chunk of request) {
@@ -32,7 +36,7 @@ const readBody = async (
     }
 
     body += chunk;
-    if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) {
+    if (Buffer.byteLength(body, "utf8") > limit) {
       return { ok: false };
     }
   }

@@ -23,6 +23,11 @@ export const evolveCase = (
           ...state.attachedPrivateRecordIds,
           event.privateRecordId,
         ],
+        attachedPrivateRecordKinds: state.attachedPrivateRecordKinds.includes(
+          event.kind,
+        )
+          ? state.attachedPrivateRecordKinds
+          : [...state.attachedPrivateRecordKinds, event.kind],
       };
     case "draft_submitted":
       return {

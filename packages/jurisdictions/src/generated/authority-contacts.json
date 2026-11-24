@@ -1,0 +1,825 @@
+{
+  "sop_rescue": [
+    {
+      "name": "Správa CHKO Malé Karpaty",
+      "address": "Štúrova 115, 900 01 Modra",
+      "phone": "033 647 40 02",
+      "duty": "0911 011 384\n0911 390 170",
+      "districts": [
+        "Hlohovec",
+        "Pezinok",
+        "Piešťany",
+        "Trnava",
+        "Bratislava III",
+        "Bratislava IV",
+        "Malacky",
+        "Myjava",
+        "Nové Mesto nad Váhom",
+        "Senec",
+        "Senica"
+      ]
+    },
+    {
+      "name": "Správa CHKO Dunajské luhy",
+      "address": "Karloveská 63, 841 04 Bratislava;\nDunajská Streda: Korzo Bélu Bartóka 789/3, 929 01 Dunajská Streda",
+      "phone": "031 551 62 29\n02 6428 39 82",
+      "duty": "0903 298 333\n0911 485 289",
+      "districts": [
+        "Bratislava I",
+        "Bratislava II",
+        "Bratislava V",
+        "Dunajská Streda",
+        "Galanta",
+        "Komárno",
+        "Nové Zámky",
+        "Šaľa",
+        "Bratislava III",
+        "Bratislava IV",
+        "Senec"
+      ]
+    },
+    {
+      "name": "Správa CHKO Biele Karpaty",
+      "address": "Trenčianska 31, 914 41 Nemšová",
+      "phone": "032 659 83 87",
+      "duty": "0911 011 381",
+      "districts": [
+        "Trenčín",
+        "Ilava",
+        "Myjava",
+        "Nové Mesto nad Váhom",
+        "Púchov",
+        "Senica",
+        "Skalica"
+      ]
+    },
+    {
+      "name": "Správa CHKO Kysuce",
+      "address": "U Tomali 1511, 022 01 Čadca",
+      "phone": "0903 298 289",
+      "duty": "0903 298 432",
+      "districts": [
+        "Čadca",
+        "Kysucké Nové Mesto",
+        "Bytča",
+        "Dolný Kubín",
+        "Považská Bystrica",
+        "Púchov",
+        "Žilina"
+      ]
+    },
+    {
+      "name": "Správa CHKO Poľana",
+      "address": "J. M. Hurbana 20, 960 01 Zvolen",
+      "phone": "045 533 48 34",
+      "duty": "0911 390 197\n0911 418 056",
+      "districts": ["Detva", "Banská Bystrica", "Brezno", "Zvolen"]
+    },
+    {
+      "name": "Správa CHKO Vihorlat",
+      "address": "Fraňa Kráľa 1, 071 01 Michalovce",
+      "phone": "056 688 25 41",
+      "duty": "0911 485 268",
+      "districts": ["Sobrance", "Humenné", "Michalovce", "Snina"]
+    },
+    {
+      "name": "Správa CHKO Latorica",
+      "address": "SNP 200/99, 075 01 Trebišov",
+      "phone": "0914 467 483",
+      "duty": "0903 298 247",
+      "districts": ["Trebišov", "Michalovce"]
+    },
+    {
+      "name": "Chovná stanica pri RCOP Prešov",
+      "address": "Švábska 4, 080 05 Prešov",
+      "phone": "051 773 27 13",
+      "duty": "0911 390 164",
+      "districts": [
+        "Bardejov",
+        "Košice I",
+        "Košice II",
+        "Košice III",
+        "Košice IV",
+        "Prešov",
+        "Vranov nad Topľou",
+        "Košice - okolie",
+        "Sabinov",
+        "Stropkov",
+        "Svidník"
+      ]
+    },
+    {
+      "name": "Rehabilitačná stanica pri Správe CHKO Štiavnické vrchy",
+      "address": "Kammerhofská 26, 969 01 Banská Štiavnica",
+      "phone": "045 691 19 31",
+      "duty": "0910 158 739",
+      "districts": [
+        "Banská Štiavnica",
+        "Krupina",
+        "Veľký Krtíš",
+        "Levice",
+        "Zvolen",
+        "Žarnovica",
+        "Žiar nad Hronom"
+      ]
+    },
+    {
+      "name": "Rehabilitačná stanica pri Národnej ZOO Bojnice",
+      "address": "Zámok a okolie 6, 972 01 Bojnice",
+      "phone": "046 540 32 41",
+      "duty": "0902 629 011",
+      "districts": [
+        "Prievidza",
+        "Partizánske",
+        "Bánovce nad Bebravou",
+        "Trenčín",
+        "Turčianske Teplice"
+      ]
+    },
+    {
+      "name": "Rehabilitačná stanica pri Správe CHKO Ponitrie – Nitra Šindolka",
+      "address": "Drážovská 14, 949 01 Nitra",
+      "phone": "037 776 49 01",
+      "duty": "0911 485 274",
+      "districts": [
+        "Bánovce nad Bebravou",
+        "Nitra",
+        "Partizánske",
+        "Topoľčany",
+        "Zlaté Moravce",
+        "Levice",
+        "Prievidza",
+        "Žarnovica",
+        "Žiar nad Hronom"
+      ]
+    },
+    {
+      "name": "Rehabilitačná stanica pri Správe NP Slovenský raj",
+      "address": "Štefánikovo námestie 9, 052 01 Spišská Nová Ves",
+      "phone": "053 442 20 10",
+      "duty": "0911 485 298",
+      "districts": [
+        "Gelnica",
+        "Spišská Nová Ves",
+        "Levoča",
+        "Poprad",
+        "Rožňava",
+        "Brezno"
+      ]
+    },
+    {
+      "name": "Záchranná stanica a Ekocentrum Zázrivá",
+      "address": "Dolina 61, 027 05 Zázrivá",
+      "phone": "043 589 65 31",
+      "duty": "0903 504 470",
+      "districts": [
+        "Dolný Kubín",
+        "Ružomberok",
+        "Martin",
+        "Tvrdošín",
+        "Kysucké Nové Mesto",
+        "Čadca",
+        "Žilina"
+      ]
+    },
+    {
+      "name": "Chovná stanica pri Správe TANAP",
+      "address": "Hodžova 11, 031 01 Liptovský Mikuláš",
+      "phone": "044 552 45 57",
+      "duty": "0911 485 280",
+      "districts": ["Tvrdošín", "Liptovský Mikuláš", "Poprad", "Kežmarok"]
+    },
+    {
+      "name": "Chovná stanica pri Správe CHKO Strážovské vrchy",
+      "address": "Orlové 189, 017 01 Považská Bystrica",
+      "phone": "042 432 28 02",
+      "duty": "0911 485 253",
+      "districts": [
+        "Bytča",
+        "Ilava",
+        "Považská Bystrica",
+        "Prievidza",
+        "Púchov",
+        "Žilina"
+      ]
+    },
+    {
+      "name": "Chovná stanica pri Správe NP Slovenský kras",
+      "address": "Hámosiho 188, 049 51 Brzotín",
+      "phone": "058 732 68 15",
+      "duty": "0911 485 293",
+      "districts": ["Košice - okolie", "Revúca", "Rožňava"]
+    },
+    {
+      "name": "Chovná stanica pri Správe CHKO Cerová vrchovina",
+      "address": "Železničná 31, 979 01 Rimavská Sobota",
+      "phone": "047 563 49 48",
+      "duty": "0903 298 145",
+      "districts": ["Lučenec", "Poltár", "Revúca", "Rimavská Sobota"]
+    },
+    {
+      "name": "Chovná stanica pri Správe NAPANT",
+      "address": "Tajovského 40, 974 01 Banská Bystrica",
+      "phone": "0905 470 791",
+      "duty": "0903 298 166",
+      "districts": [
+        "Banská Bystrica",
+        "Brezno",
+        "Liptovský Mikuláš",
+        "Poprad",
+        "Ružomberok"
+      ]
+    },
+    {
+      "name": "Chovná stanica pri Správe NP Malá Fatra",
+      "address": "Hrnčiarska 197, 013 03 Varín",
+      "phone": "041 507 14 12",
+      "duty": "0903 734 944",
+      "districts": [
+        "Dolný Kubín",
+        "Martin",
+        "Žilina",
+        "Námestovo",
+        "Ružomberok"
+      ]
+    },
+    {
+      "name": "Chovná stanica pri Správe PIENAP-u",
+      "address": "SNP 57, 061 01 Spišská Stará Ves",
+      "phone": "052 418 10 71",
+      "duty": "0911 485 218",
+      "districts": ["Kežmarok", "Stará Ľubovňa", "Sabinov"]
+    },
+    {
+      "name": "Chovná stanica pri Správe CHKO Horná Orava",
+      "address": "Bernolákova 408, 029 01 Námestovo",
+      "phone": "043 552 24 66",
+      "duty": "0911 887 422",
+      "districts": ["Námestovo", "Dolný Kubín", "Tvrdošín"]
+    },
+    {
+      "name": "Chovná stanica pri Správe NP Muránska planina",
+      "address": "Janka Kráľa 12, 050 01 Revúca",
+      "phone": "058 442 20 61",
+      "duty": "0911 485 262",
+      "districts": ["Revúca", "Brezno", "Rimavská Sobota"]
+    },
+    {
+      "name": "Chovná stanica pri Správe NP Veľká Fatra",
+      "address": "P. O. Hviezdoslava 73/38, 036 01 Martin",
+      "phone": "043 428 45 03",
+      "duty": "0911 485 308",
+      "districts": [
+        "Turčianske Teplice",
+        "Martin",
+        "Banská Bystrica",
+        "Dolný Kubín",
+        "Ružomberok"
+      ]
+    },
+    {
+      "name": "Chovná stanica pri Správe CHKO Záhorie",
+      "address": "Vajanského 17, 901 01 Malacky",
+      "phone": "0911 892 477",
+      "duty": "0903 298 338",
+      "districts": ["Bratislava IV", "Malacky", "Myjava", "Senica", "Skalica"]
+    },
+    {
+      "name": "Chovná stanica pri Správe CHKO Východné Karpaty",
+      "address": "Duchnovičova 535, 068 01 Medzilaborce",
+      "phone": "057 748 02 91",
+      "duty": "0911 316 637",
+      "districts": ["Medzilaborce", "Humenné", "Snina", "Stropkov", "Svidník"]
+    },
+    {
+      "name": "Chovná stanica pri Správe NP Poloniny",
+      "address": "Ul. Mieru 193, 067 61 Stakčín",
+      "phone": "057 762 44 24",
+      "duty": "0911 011 382",
+      "districts": ["Snina"]
+    },
+    {
+      "name": "Záchranná a chovná stanica Petrovice",
+      "address": "Petrovice 562, 013 53 Petrovice",
+      "phone": "0903 298 141",
+      "duty": "0903 298 141",
+      "districts": [
+        "Dolný Kubín",
+        "Martin",
+        "Žilina",
+        "Námestovo",
+        "Ružomberok"
+      ]
+    },
+    {
+      "name": "Centrum voľného času Sečovce",
+      "address": "Nám. sv. Cyrila a Metoda 143/46, 078 01 Sečovce",
+      "phone": "0905 469 068",
+      "duty": "0905 469 068",
+      "districts": [
+        "Bardejov",
+        "Humenné",
+        "Kežmarok",
+        "Levoča",
+        "Medzilaborce",
+        "Poprad",
+        "Prešov",
+        "Sabinov",
+        "Snina",
+        "Stará Ľubovňa",
+        "Stropkov",
+        "Svidník",
+        "Vranov nad Topľou",
+        "Gelnica",
+        "Košice I",
+        "Košice II",
+        "Košice III",
+        "Košice IV",
+        "Košice - okolie",
+        "Michalovce",
+        "Rožňava",
+        "Sobrance",
+        "Spišská Nová Ves",
+        "Trebišov"
+      ]
+    },
+    {
+      "name": "Chovná a rehabilitačná stanica pri Univerzite veterinárneho lekárstva a farmácie v Košiciach",
+      "address": "Účelové zariadenie pre chov a choroby zveri, rýb a včiel v Rozhanovciach",
+      "phone": "0918 919 742",
+      "duty": "0907 798 949\n0917 637 798",
+      "districts": [
+        "Košice I",
+        "Košice II",
+        "Košice III",
+        "Košice IV",
+        "Košice - okolie",
+        "Prešov",
+        "Trebišov",
+        "Vranov nad Topľou",
+        "Michalovce"
+      ]
+    },
+    {
+      "name": "OZ Návrat do divočiny – Into the Wild",
+      "address": "Stupavská 199, 900 32 Borinka",
+      "phone": "0948 339 429",
+      "duty": "0948 339 429",
+      "districts": [
+        "Bratislava I",
+        "Bratislava II",
+        "Bratislava III",
+        "Bratislava IV",
+        "Bratislava V",
+        "Malacky",
+        "Pezinok",
+        "Senec"
+      ]
+    },
+    {
+      "name": "OZ Priatelia prírody",
+      "address": "Myjavská 542/33, 906 13 Brezová pod Bradlom",
+      "phone": "0950 381 559",
+      "duty": "0950 381 559",
+      "districts": [
+        "Bánovce nad Bebravou",
+        "Ilava",
+        "Myjava",
+        "Nové Mesto nad Váhom",
+        "Partizánske",
+        "Považská Bystrica",
+        "Prievidza",
+        "Púchov",
+        "Trenčín"
+      ]
+    }
+  ],
+  "hunting_manager_or_opk": [
+    {
+      "name": "OPK Banská Bystrica",
+      "address": "Trieda SNP 14, 974 01 Banská Bystrica",
+      "phone": "0911 096 580",
+      "duty": "",
+      "districts": ["Banská Bystrica"]
+    },
+    {
+      "name": "OPK Brezno",
+      "address": "Nálepkova 28, 977 01 Brezno",
+      "phone": "048 611 52 53\n0905 440 331",
+      "duty": "",
+      "districts": ["Brezno"]
+    },
+    {
+      "name": "OPK Detva",
+      "address": "Partizánska 32, 962 12 Detva",
+      "phone": "0905 182 077\n0908 215 995",
+      "duty": "",
+      "districts": ["Detva"]
+    },
+    {
+      "name": "OPK Krupina",
+      "address": "Svätotrojičné námestie 1, 963 01 Krupina",
+      "phone": "0948 082 899\n0918 333 714",
+      "duty": "",
+      "districts": ["Krupina"]
+    },
+    {
+      "name": "OPK Lučenec",
+      "address": "Mierová 32, 984 01 Lučenec",
+      "phone": "0917 856 277\n0917 871 839",
+      "duty": "",
+      "districts": ["Lučenec", "Poltár"]
+    },
+    {
+      "name": "OPK Revúca",
+      "address": "Námestie Slobody 2, 050 01 Revúca",
+      "phone": "0908 558 702\n0905 206 251",
+      "duty": "",
+      "districts": ["Revúca"]
+    },
+    {
+      "name": "OPK Rimavská Sobota",
+      "address": "Mikszátha 43, 979 01 Rimavská Sobota",
+      "phone": "047 562 23 77\n0905 574 720",
+      "duty": "",
+      "districts": ["Rimavská Sobota"]
+    },
+    {
+      "name": "OPK Veľký Krtíš",
+      "address": "Mierová 1, 990 01 Veľký Krtíš",
+      "phone": "0905 664 511\n0918 333 705",
+      "duty": "",
+      "districts": ["Veľký Krtíš"]
+    },
+    {
+      "name": "OPK Zvolen",
+      "address": "Kancelária: J. Švermu 39, 960 01 Zvolen; korešpondenčná adresa: Tomášikova 1, 960 01 Zvolen",
+      "phone": "0911 555 526",
+      "duty": "",
+      "districts": ["Zvolen"]
+    },
+    {
+      "name": "OPK Žiar nad Hronom",
+      "address": "Bystrická 44, 966 81 Žarnovica",
+      "phone": "0917 830 261\n0907 142 738",
+      "duty": "",
+      "districts": ["Žiar nad Hronom", "Banská Štiavnica", "Žarnovica"]
+    },
+    {
+      "name": "OPK Bratislava",
+      "address": "Heyrovského 1, 841 03 Bratislava",
+      "phone": "0911 992 882",
+      "duty": "",
+      "districts": [
+        "Bratislava I",
+        "Bratislava II",
+        "Bratislava III",
+        "Bratislava IV",
+        "Bratislava V"
+      ]
+    },
+    {
+      "name": "OPK Malacky",
+      "address": "Kollárova 892, 901 01 Malacky",
+      "phone": "034 774 28 61\n0905 604 419",
+      "duty": "",
+      "districts": ["Malacky"]
+    },
+    {
+      "name": "OPK Pezinok",
+      "address": "Šúrska 5, 900 01 Modra",
+      "phone": "0903 700 193",
+      "duty": "",
+      "districts": ["Pezinok"]
+    },
+    {
+      "name": "OPK Senec",
+      "address": "Lichnerova 33, 903 01 Senec",
+      "phone": "0903 216 970",
+      "duty": "",
+      "districts": ["Senec"]
+    },
+    {
+      "name": "OPK Gelnica",
+      "address": "Slovenská 15, 056 01 Gelnica",
+      "phone": "053 482 15 14",
+      "duty": "",
+      "districts": ["Gelnica"]
+    },
+    {
+      "name": "OPK Košice",
+      "address": "Pri Miklušovej väznici 8, 040 01 Košice",
+      "phone": "0908 087 465",
+      "duty": "",
+      "districts": ["Košice I", "Košice II", "Košice III", "Košice IV"]
+    },
+    {
+      "name": "OPK Košice - okolie",
+      "address": "Komenského 73, 040 01 Košice",
+      "phone": "0944 512 609",
+      "duty": "",
+      "districts": ["Košice - okolie"]
+    },
+    {
+      "name": "OPK Michalovce",
+      "address": "S. Chalúpku 12, 071 01 Michalovce",
+      "phone": "056 642 31 53\n0905 563 401",
+      "duty": "",
+      "districts": ["Michalovce"]
+    },
+    {
+      "name": "OPK Rožňava",
+      "address": "Strelnica 248/22, 048 01 Rožňava",
+      "phone": "0917 803 019\né58 381 01 64",
+      "duty": "",
+      "districts": ["Rožňava"]
+    },
+    {
+      "name": "OPK Sobrance",
+      "address": "Kúpeľská 66, 073 01 Sobrance",
+      "phone": "056 652 24 17\n0918 996 796",
+      "duty": "",
+      "districts": ["Sobrance"]
+    },
+    {
+      "name": "OPK Spišská Nová Ves",
+      "address": "Letná 30, 052 01 Spišská Nová Ves",
+      "phone": "053 446 41 82\n0918 547 289",
+      "duty": "",
+      "districts": ["Spišská Nová Ves"]
+    },
+    {
+      "name": "OPK Trebišov",
+      "address": "Hviezdoslavova 718, 075 01 Trebišov",
+      "phone": "0907 991 546",
+      "duty": "",
+      "districts": ["Trebišov"]
+    },
+    {
+      "name": "OPK Komárno",
+      "address": "Ul. Mateja Bela 1739/30, 945 01 Komárno",
+      "phone": "035 774 12 62\n0907 741 229",
+      "duty": "",
+      "districts": ["Komárno"]
+    },
+    {
+      "name": "OPK Levice",
+      "address": "Dopravná 14, 934 01 Levice",
+      "phone": "0918 166 467\n0917 229 130",
+      "duty": "",
+      "districts": ["Levice"]
+    },
+    {
+      "name": "OPK Nitra",
+      "address": "Mostná 6, 949 01 Nitra",
+      "phone": "0948 775 700",
+      "duty": "",
+      "districts": ["Nitra"]
+    },
+    {
+      "name": "OPK Nové Zámky",
+      "address": "G. Czuczora č. 6, 940 02 Nové Zámky",
+      "phone": "035 640 02 21\n0903 472 094",
+      "duty": "",
+      "districts": ["Nové Zámky"]
+    },
+    {
+      "name": "OPK Šaľa",
+      "address": "P. Pázmaňa 2367/17A, 927 01 Šaľa",
+      "phone": "0917 763 492\n0905 446 964",
+      "duty": "",
+      "districts": ["Šaľa"]
+    },
+    {
+      "name": "OPK Topoľčany",
+      "address": "Slobody 511/25, 955 01 Topoľčany",
+      "phone": "0911 392 732",
+      "duty": "",
+      "districts": ["Topoľčany"]
+    },
+    {
+      "name": "OPK Zlaté Moravce",
+      "address": "Sládkovičova 3, 953 01 Zlaté Moravce",
+      "phone": "0903 649 192\né903 246 648",
+      "duty": "",
+      "districts": ["Zlaté Moravce"]
+    },
+    {
+      "name": "OPK Bardejov",
+      "address": "Stocklova 40, 085 01 Bardejov",
+      "phone": "054 4723 925\n0905 278 006",
+      "duty": "",
+      "districts": ["Bardejov"]
+    },
+    {
+      "name": "OPK Humenné",
+      "address": "Lipová 756/14, 066 01 Humenné",
+      "phone": "0914 192 546\n057 7783 246",
+      "duty": "",
+      "districts": ["Humenné", "Medzilaborce", "Snina"]
+    },
+    {
+      "name": "OPK Kežmarok",
+      "address": "Hlavné námestie 10, 060 01 Kežmarok",
+      "phone": "052 778 18 12\n0911 626 536",
+      "duty": "",
+      "districts": ["Kežmarok"]
+    },
+    {
+      "name": "OPK Levoča",
+      "address": "Kláštorská 37, 054 01 Levoča",
+      "phone": "0907 936 391\n0948 302 235",
+      "duty": "",
+      "districts": ["Levoča"]
+    },
+    {
+      "name": "OPK Poprad",
+      "address": "Levočská 3312/37, 058 01 Poprad",
+      "phone": "0910 490 521\n0908 548 124",
+      "duty": "",
+      "districts": ["Poprad"]
+    },
+    {
+      "name": "OPK Prešov",
+      "address": "Štúrova 20, 080 01 Prešov",
+      "phone": "051 7746 778",
+      "duty": "",
+      "districts": ["Prešov", "Sabinov"]
+    },
+    {
+      "name": "OPK Stará Ľubovňa",
+      "address": "Farbiarska 47/19, 064 01 Stará Ľubovňa",
+      "phone": "052 432 24 24",
+      "duty": "",
+      "districts": ["Stará Ľubovňa"]
+    },
+    {
+      "name": "OPK Stropkov",
+      "address": "Matice Slovenskej 1765, 091 01 Stropkov",
+      "phone": "054 742 44 88\n0904 628 553",
+      "duty": "",
+      "districts": ["Stropkov"]
+    },
+    {
+      "name": "OPK Svidník",
+      "address": "Centrálna 765/17, 089 01 Svidník",
+      "phone": "054 752 48 86\n0907 915 294",
+      "duty": "",
+      "districts": ["Svidník"]
+    },
+    {
+      "name": "OPK Vranov nad Topľou",
+      "address": "Kalinčiakova 871/6, 093 01 Vranov nad Topľou",
+      "phone": "0917 746 309\n0908 990 409",
+      "duty": "",
+      "districts": ["Vranov nad Topľou"]
+    },
+    {
+      "name": "OPK Bánovce nad Bebravou",
+      "address": "Ulica A. Kmeťa 531/4, 957 01 Bánovce nad Bebravou",
+      "phone": "0918 923 187\n0918 334 281",
+      "duty": "",
+      "districts": ["Bánovce nad Bebravou"]
+    },
+    {
+      "name": "OPK Ilava",
+      "address": "Farská 84/5, 019 01 Ilava",
+      "phone": "042 446 44 54\n0918 770 660",
+      "duty": "",
+      "districts": ["Ilava"]
+    },
+    {
+      "name": "OPK Nové Mesto nad Váhom",
+      "address": "Krčméryho 3, 915 01 Nové Mesto nad Váhom",
+      "phone": "0907 217 779\n0905 607 198",
+      "duty": "",
+      "districts": ["Nové Mesto nad Váhom"]
+    },
+    {
+      "name": "OPK Partizánske",
+      "address": "1. mája 226/6, 958 01 Partizánske",
+      "phone": "0911 916 166",
+      "duty": "",
+      "districts": ["Partizánske"]
+    },
+    {
+      "name": "OPK Považská Bystrica",
+      "address": "Štúrova 34, 017 01 Považská Bystrica",
+      "phone": "042 434 00 28\n0907 172 646\n0903 226 565",
+      "duty": "",
+      "districts": ["Považská Bystrica", "Púchov"]
+    },
+    {
+      "name": "OPK Prievidza",
+      "address": "Bojnická cesta 17, 971 01 Prievidza",
+      "phone": "0910 629 127\n0905 876 909",
+      "duty": "",
+      "districts": ["Prievidza"]
+    },
+    {
+      "name": "OPK Trenčín",
+      "address": "Zlatovská 27, 911 05 Trenčín",
+      "phone": "0948 021 128",
+      "duty": "",
+      "districts": ["Trenčín"]
+    },
+    {
+      "name": "OPK Dunajská Streda",
+      "address": "Galantská cesta 658/2B, 929 01 Dunajská Streda",
+      "phone": "0910 932 026",
+      "duty": "",
+      "districts": ["Dunajská Streda"]
+    },
+    {
+      "name": "OPK Galanta",
+      "address": "Športová 22, 924 00 Galanta",
+      "phone": "031 7802 301\n0903 483 538\n0903 928 296",
+      "duty": "",
+      "districts": ["Galanta"]
+    },
+    {
+      "name": "OPK Piešťany",
+      "address": "Hollého 23, 921 01 Piešťany",
+      "phone": "0910 180 999\n0905 985 048",
+      "duty": "",
+      "districts": ["Piešťany"]
+    },
+    {
+      "name": "OPK pre okresy Myjava a Senica",
+      "address": "Hollého 750, 905 01 Senica",
+      "phone": "034 651 46 24\n0905 545 955",
+      "duty": "",
+      "districts": ["Senica", "Myjava"]
+    },
+    {
+      "name": "OPK Skalica",
+      "address": "Kollárova 21, 908 51 Holíč",
+      "phone": "034 6589 128\n0905 973 375",
+      "duty": "",
+      "districts": ["Skalica"]
+    },
+    {
+      "name": "OPK Trnava",
+      "address": "Vajanského 23, 917 01 Trnava",
+      "phone": "0910 668 948\n033 551 10 82",
+      "duty": "",
+      "districts": ["Trnava", "Hlohovec"]
+    },
+    {
+      "name": "OPK Čadca",
+      "address": "Palárikova 1086, 022 01 Čadca",
+      "phone": "0901 704 706",
+      "duty": "",
+      "districts": ["Čadca", "Kysucké Nové Mesto"]
+    },
+    {
+      "name": "OPK Dolný Kubín",
+      "address": "J. Ťatliaka 2051/8, 026 01 Dolný Kubín",
+      "phone": "0911 969 238\n0917 680 200",
+      "duty": "",
+      "districts": ["Dolný Kubín"]
+    },
+    {
+      "name": "OPK Liptovský Mikuláš",
+      "address": "Ul. 1. mája 40, 031 01 Liptovský Mikuláš",
+      "phone": "0905 525 867",
+      "duty": "",
+      "districts": ["Liptovský Mikuláš"]
+    },
+    {
+      "name": "OPK Martin",
+      "address": "Svätoplukova 254/16, 036 01 Martin",
+      "phone": "0903 440 064\n0904 391 628",
+      "duty": "",
+      "districts": ["Martin", "Turčianske Teplice"]
+    },
+    {
+      "name": "OPK Námestovo",
+      "address": "Miestneho priemyslu 569, 029 01 Námestovo",
+      "phone": "043 5523 833\n0907 536 633",
+      "duty": "",
+      "districts": ["Námestovo"]
+    },
+    {
+      "name": "OPK Ružomberok",
+      "address": "Podhora 2, 034 01 Ružomberok",
+      "phone": "044 432 76 84\n0907 837 682",
+      "duty": "",
+      "districts": ["Ružomberok"]
+    },
+    {
+      "name": "OPK Tvrdošín",
+      "address": "Kancelária: internát SŠIT a SOŠL Tvrdošín, Medvedzie 133/1, prízemie, 027 44 Tvrdošín",
+      "phone": "0944 440 998\n0911 811 556",
+      "duty": "",
+      "districts": ["Tvrdošín"]
+    },
+    {
+      "name": "OPK Žilina",
+      "address": "Dlhá 76, 010 09 Žilina",
+      "phone": "0903 543 555",
+      "duty": "",
+      "districts": ["Žilina", "Bytča"]
+    }
+  ]
+}

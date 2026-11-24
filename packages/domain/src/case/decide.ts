@@ -1,6 +1,5 @@
 import { err, ok, type Result } from "../result.js";
 import {
-  hasAvailablePrivateData,
   type CaseCommand,
   type CaseDomainError,
   type CaseDomainEvent,
@@ -50,6 +49,13 @@ export const decideCase = (
         return err(invalidTransition);
       }
 
+      if (
+        !(["location", "form_snapshot", "contact"] as const).every((kind) =>
+          state.attachedPrivateRecordKinds.includes(kind),
+        )
+      ) {
+        return err({ code: "INCOMPLETE_REPORT" });
+      }
       return ok([{ type: "draft_submitted" }]);
     case "start_review":
       if (state.status === "uninitialized") {
@@ -80,7 +86,9 @@ export const decideCase = (
         return err(invalidTransition);
       }
 
-      if (!hasAvailablePrivateData(state)) {
+      // Admin working data is erasable too, even for a report with no reporter
+      // attachments. The first purge verifies cleanup of every private store.
+      if (state.privateDataPurged) {
         return err({ code: "NOTHING_TO_PURGE" });
       }
 
@@ -95,7 +103,7 @@ export const decideCase = (
       }
 
       return ok(
-        hasAvailablePrivateData(state)
+        !state.privateDataPurged
           ? [{ type: "private_data_purged" }, { type: "draft_expired" }]
           : [{ type: "draft_expired" }],
       );

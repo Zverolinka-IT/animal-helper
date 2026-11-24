@@ -10,10 +10,16 @@ import {
   syntheticAttachPrivateDataCommand,
   syntheticCreateDraftCommand,
   syntheticSubmitDraftCommand,
+  syntheticFormSnapshot,
+  syntheticLocationPayload,
+  syntheticContactPayload,
   toDomainCaseCommand,
 } from "@animal-helper/contracts";
 import { describe, expect, it, beforeAll, beforeEach, afterAll } from "vitest";
 import postgres, { type Sql } from "postgres";
+
+import { applyCommandInTransaction } from "../src/apply-command.js";
+import { inspectMigrations } from "../src/migrations.js";
 
 import {
   applyCommand,
@@ -95,7 +101,7 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
         throw new Error("DATABASE_TEST_URL is required");
       }
 
-      sql = postgres(databaseUrl, createSqlOptions(process.env, { max: 1 }));
+      sql = postgres(databaseUrl, createSqlOptions(process.env, { max: 4 }));
       expect(readDatabaseName(databaseUrl)).toMatch(/_test$/u);
       await sql`drop schema if exists ah cascade`;
       await sql`drop table if exists public.schema_migrations`;
@@ -122,6 +128,27 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
       await sql.end();
     });
 
+    const attachRequired = async (expectedVersion: number) => {
+      for (const record of [
+        { kind: "location", privatePayload: syntheticLocationPayload },
+        { kind: "form_snapshot", privatePayload: syntheticFormSnapshot },
+        { kind: "contact", privatePayload: syntheticContactPayload },
+      ]) {
+        const result = await applyCommand(
+          sql,
+          inputFrom({
+            ...syntheticAttachPrivateDataCommand,
+            ...record,
+            expectedVersion: expectedVersion++,
+            commandId: randomUUID(),
+            privateRecordId: randomUUID(),
+          }),
+        );
+        expect(result.ok).toBe(true);
+      }
+      return expectedVersion;
+    };
+
     it("appends, projects, and enqueues outbox work in one transaction", async () => {
       const capability = randomBytes(32);
       const created = await applyCommand(
@@ -146,9 +173,10 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
       );
       expect(attached.ok).toBe(true);
 
+      await attachRequired(2);
       const submitted = await applyCommand(
         sql,
-        inputFrom(syntheticSubmitDraftCommand),
+        inputFrom({ ...syntheticSubmitDraftCommand, expectedVersion: 5 }),
       );
       expect(submitted).toMatchObject({
         ok: true,
@@ -161,6 +189,9 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
       );
       expect(events.map((event) => event.type)).toEqual([
         "case.draft_created",
+        "case.private_data_attached",
+        "case.private_data_attached",
+        "case.private_data_attached",
         "case.private_data_attached",
         "case.draft_submitted",
       ]);
@@ -247,6 +278,149 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
       expect(eventCount?.count).toBe("1");
     });
 
+    it("acknowledges simultaneous retries of create and attach exactly once", async () => {
+      const create = inputFrom(syntheticCreateDraftCommand, {
+        capabilityHash: hashCapability(randomBytes(32), pepper),
+      });
+      const creates = await Promise.all(
+        Array.from({ length: 8 }, () => applyCommand(sql, create)),
+      );
+      expect(creates.every((result) => result.ok)).toBe(true);
+      expect(
+        creates.filter(
+          (result) => result.ok && result.value.outcome === "applied",
+        ),
+      ).toHaveLength(1);
+      const attach = inputFrom(syntheticAttachPrivateDataCommand);
+      const attaches = await Promise.all(
+        Array.from({ length: 8 }, () => applyCommand(sql, attach)),
+      );
+      expect(attaches.every((result) => result.ok)).toBe(true);
+      expect(
+        attaches.filter(
+          (result) => result.ok && result.value.outcome === "applied",
+        ),
+      ).toHaveLength(1);
+      expect(await loadRecordedEvents(sql, create.streamId)).toHaveLength(2);
+      expect(
+        await sql`select private_record_id from ah.private_records`,
+      ).toHaveLength(1);
+    });
+
+    it("records server time and keeps it monotonic despite forged client clocks", async () => {
+      await applyCommand(
+        sql,
+        inputFrom(
+          {
+            ...syntheticCreateDraftCommand,
+            occurredAt: "2099-01-01T00:00:00.000Z",
+          },
+          {
+            capabilityHash: hashCapability(randomBytes(32), pepper),
+          },
+        ),
+      );
+      await applyCommand(
+        sql,
+        inputFrom(
+          {
+            ...syntheticAttachPrivateDataCommand,
+            occurredAt: "2000-01-01T00:00:00.000Z",
+          },
+          {
+            now: new Date(now.getTime() - 1000),
+          },
+        ),
+      );
+      const events = await loadRecordedEvents(
+        sql,
+        syntheticCreateDraftCommand.streamId,
+      );
+      expect(events.map((event) => event.occurredAt)).toEqual([
+        now.toISOString(),
+        now.toISOString(),
+      ]);
+      await rebuildCaseProjections(sql, syntheticCreateDraftCommand.streamId);
+      expect(
+        await getPublicStatus(sql, syntheticCreateDraftCommand.streamId),
+      ).toMatchObject({
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      });
+    });
+
+    it("waits for an in-flight close before rebuilding either projection", async () => {
+      const streamId = syntheticCreateDraftCommand.streamId;
+      await applyCommand(
+        sql,
+        inputFrom(syntheticCreateDraftCommand, {
+          capabilityHash: hashCapability(randomBytes(32), pepper),
+        }),
+      );
+      await attachRequired(1);
+      await applyCommand(
+        sql,
+        inputFrom({ ...syntheticSubmitDraftCommand, expectedVersion: 4 }),
+      );
+      let release!: () => void;
+      let ready!: () => void;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const locked = new Promise<void>((resolve) => {
+        ready = resolve;
+      });
+      const writer = sql.begin(async (transaction) => {
+        const tx = transaction as unknown as Sql;
+        for (const [offset, type] of (
+          ["start_review", "complete_case"] as const
+        ).entries()) {
+          const result = await applyCommandInTransaction(
+            tx,
+            inputFrom({
+              ...syntheticSubmitDraftCommand,
+              type,
+              commandId: randomUUID(),
+              expectedVersion: 5 + offset,
+            }),
+          );
+          expect(result.ok).toBe(true);
+        }
+        ready();
+        await held;
+      });
+      await locked;
+      const state = { finished: false };
+      const rebuilding = rebuildCaseProjections(sql, streamId).finally(() => {
+        state.finished = true;
+      });
+      try {
+        let waiting = false;
+        for (let attempt = 0; attempt < 100 && !state.finished; attempt++) {
+          const [row] = await sql<{ waiting: boolean }[]>`select exists(
+            select 1 from pg_stat_activity where datname = current_database()
+              and wait_event_type = 'Lock' and query like '%for update%'
+          ) as waiting`;
+          waiting = row?.waiting === true;
+          if (waiting) break;
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        expect(waiting).toBe(true);
+        expect(state.finished).toBe(false);
+      } finally {
+        release();
+      }
+      await writer;
+      expect(await rebuilding).toMatchObject({ ok: true });
+      expect(await getPublicStatus(sql, streamId)).toMatchObject({
+        publicState: "closed",
+      });
+      const [queue] = await sql<
+        { workflow_state: string }[]
+      >`select workflow_state from ah.case_queue_projection where stream_id = ${streamId}::uuid`;
+      expect(queue?.workflow_state).toBe("completed");
+    });
+
     it("rejects a stale expected version without appending", async () => {
       await applyCommand(
         sql,
@@ -283,7 +457,11 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
         }),
       );
       await applyCommand(sql, inputFrom(syntheticAttachPrivateDataCommand));
-      await applyCommand(sql, inputFrom(syntheticSubmitDraftCommand));
+      await attachRequired(2);
+      await applyCommand(
+        sql,
+        inputFrom({ ...syntheticSubmitDraftCommand, expectedVersion: 5 }),
+      );
       await applyCommand(
         sql,
         inputFrom({
@@ -291,7 +469,7 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
           schemaVersion: 1,
           commandId: randomUUID(),
           streamId: syntheticCreateDraftCommand.streamId,
-          expectedVersion: 3,
+          expectedVersion: 6,
           occurredAt: "2026-08-22T12:00:00.000Z",
           correlationId: syntheticCreateDraftCommand.correlationId,
         }),
@@ -303,11 +481,16 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
           schemaVersion: 1,
           commandId: randomUUID(),
           streamId: syntheticCreateDraftCommand.streamId,
-          expectedVersion: 4,
+          expectedVersion: 7,
           occurredAt: "2026-08-22T12:00:00.000Z",
           correlationId: syntheticCreateDraftCommand.correlationId,
         }),
       );
+
+      await sql`insert into ah.admin_case_work (stream_id, document) values (
+        ${syntheticCreateDraftCommand.streamId}::uuid,
+        '{"note":"synthetic-private-admin-note","volunteer":{"name":"Synthetic volunteer"}}'::jsonb
+      )`;
 
       const purged = await applyCommand(
         sql,
@@ -316,7 +499,7 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
           schemaVersion: 1,
           commandId: randomUUID(),
           streamId: syntheticCreateDraftCommand.streamId,
-          expectedVersion: 5,
+          expectedVersion: 8,
           occurredAt: "2026-08-22T12:00:00.000Z",
           correlationId: syntheticCreateDraftCommand.correlationId,
         }),
@@ -334,6 +517,9 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
       from ah.private_records
       where stream_id = ${syntheticCreateDraftCommand.streamId}::uuid
     `;
+      expect(
+        await sql`select stream_id from ah.admin_case_work where stream_id = ${syntheticCreateDraftCommand.streamId}::uuid`,
+      ).toHaveLength(0);
       expect(privateRow?.payload).toBeNull();
       expect(privateRow?.deleted_at).not.toBeNull();
 
@@ -356,7 +542,7 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
         sql,
         syntheticCreateDraftCommand.streamId,
       );
-      expect(rebuilt).toEqual({ ok: true, eventCount: 6 });
+      expect(rebuilt).toEqual({ ok: true, eventCount: 9 });
 
       const [queue] = await sql<{ workflow_state: string }[]>`
       select workflow_state
@@ -410,6 +596,100 @@ describe.skipIf(integrationDatabaseUrl === undefined)(
     it("is safe to apply the same migrations more than once", async () => {
       await applyMigrations(sql, defaultMigrationsDirectory);
       await applyMigrations(sql, defaultMigrationsDirectory);
+    });
+
+    it("checks pending migrations without applying them or changing the ledger", async () => {
+      const directory = await mkdtemp(path.join(tmpdir(), "ah-plan-"));
+      const { readdir, copyFile } = await import("node:fs/promises");
+      const before =
+        await sql`select * from public.schema_migrations order by filename`;
+      try {
+        for (const filename of await readdir(defaultMigrationsDirectory)) {
+          if (filename.endsWith(".sql")) {
+            await copyFile(
+              path.join(defaultMigrationsDirectory, filename),
+              path.join(directory, filename),
+            );
+          }
+        }
+        const filename = "20990101000000_preflight.sql";
+        await writeFile(path.join(directory, filename), "select 1;\n");
+        const plan = await inspectMigrations(sql, directory);
+        expect(plan.applied).toBe(before.length);
+        expect(plan.pending).toHaveLength(1);
+        expect(plan.pending[0]?.filename).toBe(filename);
+        expect(plan.pending[0]?.checksum).toMatch(/^[a-f0-9]{64}$/);
+        await writeFile(
+          path.join(directory, String(before[0]?.filename)),
+          "select 2;\n",
+        );
+        await expect(inspectMigrations(sql, directory)).rejects.toThrow(
+          /has changed/,
+        );
+        expect(
+          await sql`select * from public.schema_migrations order by filename`,
+        ).toEqual(before);
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    });
+
+    it("upgrades existing guidance without changing hashes, cells or publication pointers", async () => {
+      // Everything, including removal of the column to model the old schema,
+      // is rolled back in this synthetic test database.
+      const connection = await sql.reserve();
+      const revisionId = randomUUID();
+      const hash = "a".repeat(64);
+      try {
+        await connection.unsafe("begin");
+        await connection`alter table ah.guidance_revisions drop column report_profiles`;
+        await connection`
+          insert into ah.guidance_revisions
+            (revision_id, flow_key, schema_version, locale, jurisdiction, status,
+             created_by, created_at, updated_at, published_at, description, content_hash)
+          values (${revisionId}::uuid, 'migration-test', 1, 'sk-SK', 'SK', 'published',
+                  'synthetic', now(), now(), now(), 'Synthetic migration fixture', ${hash})
+        `;
+        await connection`
+          insert into ah.guidance_cells
+            (revision_id, kind_key, instruction_key, applicability, sort_order, copy_json)
+          values (${revisionId}::uuid, 'dog', 'warning', 'on', 1, '{"title":"Synthetic"}'::jsonb)
+        `;
+        await connection`
+          insert into ah.guidance_publications
+            (flow_key, schema_version, locale, jurisdiction, active_revision_id, published_at)
+          values ('migration-test', 1, 'sk-SK', 'SK', ${revisionId}::uuid, now())
+        `;
+        const before =
+          await connection`select * from ah.guidance_revisions where revision_id = ${revisionId}`;
+        const cells =
+          await connection`select * from ah.guidance_cells where revision_id = ${revisionId}`;
+        const publications =
+          await connection`select * from ah.guidance_publications where active_revision_id = ${revisionId}`;
+        await connection.file(
+          path.join(
+            defaultMigrationsDirectory,
+            "20261022160000_report_guidance_profiles.sql",
+          ),
+        );
+        expect(
+          await connection`select revision.* from ah.guidance_revisions revision where revision_id = ${revisionId}`,
+        ).toEqual([{ ...before[0], report_profiles: [] }]);
+        expect(
+          await connection`select * from ah.guidance_cells where revision_id = ${revisionId}`,
+        ).toEqual(cells);
+        expect(
+          await connection`select * from ah.guidance_publications where active_revision_id = ${revisionId}`,
+        ).toEqual(publications);
+        await connection.unsafe("savepoint invalid_profile");
+        await expect(
+          connection`update ah.guidance_revisions set report_profiles = '{}'::jsonb where revision_id = ${revisionId}`,
+        ).rejects.toThrow(/check constraint/);
+        await connection.unsafe("rollback to savepoint invalid_profile");
+      } finally {
+        await connection.unsafe("rollback");
+        connection.release();
+      }
     });
 
     it("rejects an edited applied migration", async () => {

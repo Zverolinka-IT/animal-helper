@@ -4,6 +4,7 @@ import {
 } from "@animal-helper/contracts";
 import {
   capabilityAllowsMutation,
+  capabilityAllowsStatusRead,
   hashCapability,
   hashCommandContent,
   type ApplyFailure,
@@ -62,7 +63,11 @@ export const handleCommand = async (
   } else if (
     stored === undefined ||
     stored.streamId !== command.streamId ||
-    !capabilityAllowsMutation(stored, now)
+    (!capabilityAllowsMutation(stored, now) &&
+      !(
+        command.type === "submit_draft" &&
+        capabilityAllowsStatusRead(stored, now)
+      ))
   ) {
     return apiError("NOT_FOUND");
   }
@@ -78,6 +83,9 @@ export const handleCommand = async (
     contentHash: hashCommandContent(command),
     capabilityHash,
     now,
+    ...(stored !== undefined && !capabilityAllowsMutation(stored, now)
+      ? { duplicateOnly: true }
+      : {}),
     ...(command.type === "attach_private_data"
       ? {
           privateRecord: {
@@ -92,6 +100,8 @@ export const handleCommand = async (
   });
 
   if (!result.ok) {
+    if (stored !== undefined && !capabilityAllowsMutation(stored, now))
+      return apiError("NOT_FOUND");
     return apiError(toApiError(result.error.code));
   }
 

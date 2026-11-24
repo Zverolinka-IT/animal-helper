@@ -10,6 +10,7 @@ export type OperatorRecord = Readonly<{
   operatorId: string;
   email: string;
   enabled: boolean;
+  canManageOperators: boolean;
 }>;
 
 export type OperatorPasskeyRecord = Readonly<{
@@ -25,6 +26,7 @@ export type OperatorChallengeRecord = Readonly<{
   challenge: string;
   operatorId: string | null;
   bootstrapHash: Buffer | null;
+  sessionTokenHash: Buffer | null;
 }>;
 
 export type OperatorSessionRecord = Readonly<{
@@ -32,6 +34,7 @@ export type OperatorSessionRecord = Readonly<{
   email: string;
   createdAt: Date;
   expiresAt: Date;
+  canManageOperators: boolean;
 }>;
 
 export type QueueCaseRecord = Readonly<{
@@ -69,7 +72,7 @@ export const bootstrapOperator = async (
   const tokenHash = hashOpaqueToken(token);
   const expiresAt = new Date(now.getTime() + bootstrapSeconds * 1000);
 
-  await withReservedTransaction(sql, async (tx) => {
+  await withOperatorTransaction(sql, async (tx) => {
     const existing = await tx<{ operator_id: string; enabled: boolean }[]>`
       select operator_id, enabled from ah.operators where email = ${email}
     `;
@@ -106,9 +109,14 @@ export const lookupActiveBootstrap = async (
   now: Date,
 ): Promise<OperatorRecord | undefined> => {
   const [row] = await sql<
-    { operator_id: string; email: string; enabled: boolean }[]
+    {
+      operator_id: string;
+      email: string;
+      enabled: boolean;
+      can_manage_operators: boolean;
+    }[]
   >`
-    select o.operator_id, o.email, o.enabled
+    select o.operator_id, o.email, o.enabled, o.can_manage_operators
     from ah.operator_bootstraps b
     join ah.operators o on o.operator_id = b.operator_id
     where b.token_hash = ${tokenHash}
@@ -171,7 +179,7 @@ export const deleteOperatorAccount = async (
   rawEmail: string,
 ): Promise<void> => {
   const email = normalizeOperatorEmail(rawEmail);
-  await withReservedTransaction(sql, async (tx) => {
+  await withOperatorTransaction(sql, async (tx) => {
     const [row] = await tx<{ operator_id: string }[]>`
       select operator_id from ah.operators where email = ${email}
     `;
@@ -216,11 +224,12 @@ export const insertOperatorChallenge = async (
     operatorId: string | null;
     bootstrapHash: Buffer | null;
     expiresAt: Date;
+    sessionTokenHash?: Buffer;
   },
 ): Promise<void> => {
   await sql`
     insert into ah.operator_challenges (
-      token_hash, kind, challenge, operator_id, bootstrap_hash, expires_at
+      token_hash, kind, challenge, operator_id, bootstrap_hash, expires_at, session_token_hash
     )
     values (
       ${input.tokenHash},
@@ -228,7 +237,8 @@ export const insertOperatorChallenge = async (
       ${input.challenge},
       ${input.operatorId},
       ${input.bootstrapHash},
-      ${input.expiresAt}
+      ${input.expiresAt},
+      ${input.sessionTokenHash ?? null}
     )
   `;
 };
@@ -245,13 +255,14 @@ export const takeOperatorChallenge = async (
       challenge: string;
       operator_id: string | null;
       bootstrap_hash: Buffer | null;
+      session_token_hash: Buffer | null;
     }[]
   >`
     delete from ah.operator_challenges
     where token_hash = ${tokenHash}
       and kind = ${kind}
       and expires_at > ${now}
-    returning kind, challenge, operator_id, bootstrap_hash
+    returning kind, challenge, operator_id, bootstrap_hash, session_token_hash
   `;
   if (row === undefined) {
     return undefined;
@@ -261,6 +272,7 @@ export const takeOperatorChallenge = async (
     challenge: row.challenge,
     operatorId: row.operator_id,
     bootstrapHash: row.bootstrap_hash,
+    sessionTokenHash: row.session_token_hash,
   };
 };
 
@@ -278,7 +290,14 @@ export const finishOperatorRegistration = async (
     sessionExpiresAt: Date;
   },
 ): Promise<OperatorRecord> => {
-  return withReservedTransaction(sql, async (tx) => {
+  return withOperatorTransaction(sql, async (tx) => {
+    const [account] = await tx<
+      { enabled: boolean; can_manage_operators: boolean }[]
+    >`
+      select enabled, can_manage_operators from ah.operators
+      where operator_id = ${input.operatorId}::uuid for update
+    `;
+    if (!account?.enabled) throw new OperatorAuthError("bootstrap_invalid");
     const consumed = await tx<{ operator_id: string; email: string }[]>`
       update ah.operator_bootstraps
       set consumed_at = ${input.now}
@@ -323,6 +342,7 @@ export const finishOperatorRegistration = async (
       operatorId: operator.operator_id,
       email: operator.email,
       enabled: true,
+      canManageOperators: account.can_manage_operators,
     };
   });
 };
@@ -339,9 +359,10 @@ export const finishOperatorAuthentication = async (
     sessionTokenHash: Buffer;
     now: Date;
     sessionExpiresAt: Date;
+    previousSessionTokenHash?: Buffer;
   },
 ): Promise<OperatorRecord> => {
-  return withReservedTransaction(sql, async (tx) => {
+  return withOperatorTransaction(sql, async (tx) => {
     const [row] = await tx<
       {
         credential_id: string;
@@ -351,6 +372,7 @@ export const finishOperatorAuthentication = async (
         transports: unknown;
         email: string;
         enabled: boolean;
+        can_manage_operators: boolean;
       }[]
     >`
       select
@@ -360,14 +382,25 @@ export const finishOperatorAuthentication = async (
         p.counter::text as counter,
         p.transports,
         o.email,
-        o.enabled
+        o.enabled,
+        o.can_manage_operators
       from ah.operator_passkeys p
       join ah.operators o on o.operator_id = p.operator_id
       where p.credential_id = ${input.credentialId}
-      for update of p
+      for update of p, o
     `;
     if (row === undefined || !row.enabled) {
       throw new OperatorAuthError("passkey_failed");
+    }
+    if (input.previousSessionTokenHash !== undefined) {
+      const [session] = await tx`
+        select token_hash from ah.operator_sessions
+        where token_hash = ${input.previousSessionTokenHash}
+          and operator_id = ${row.operator_id}::uuid
+          and revoked_at is null and expires_at > ${input.now}
+        for update
+      `;
+      if (session === undefined) throw new OperatorAuthError("passkey_failed");
     }
     if (
       input.expectedOperatorId !== undefined &&
@@ -386,6 +419,12 @@ export const finishOperatorAuthentication = async (
     const verified = await input.verify(passkey);
     if (!verified.userVerified) {
       throw new OperatorAuthError("passkey_failed");
+    }
+    if (input.previousSessionTokenHash !== undefined) {
+      await tx`
+        update ah.operator_sessions set revoked_at = ${input.now}
+        where token_hash = ${input.previousSessionTokenHash}
+      `;
     }
 
     await tx`
@@ -408,6 +447,7 @@ export const finishOperatorAuthentication = async (
       operatorId: row.operator_id,
       email: row.email,
       enabled: true,
+      canManageOperators: row.can_manage_operators,
     };
   });
 };
@@ -423,9 +463,10 @@ export const lookupOperatorSession = async (
       email: string;
       created_at: Date;
       expires_at: Date;
+      can_manage_operators: boolean;
     }[]
   >`
-    select s.operator_id, o.email, s.created_at, s.expires_at
+    select s.operator_id, o.email, s.created_at, s.expires_at, o.can_manage_operators
     from ah.operator_sessions s
     join ah.operators o on o.operator_id = s.operator_id
     where s.token_hash = ${tokenHash}
@@ -441,6 +482,7 @@ export const lookupOperatorSession = async (
     email: row.email,
     createdAt: row.created_at,
     expiresAt: row.expires_at,
+    canManageOperators: row.can_manage_operators,
   };
 };
 
@@ -498,6 +540,7 @@ export const recordOperatorAudit = async (
     action: string;
     outcome: "accepted" | "rejected";
     streamId?: string;
+    targetOperatorId?: string;
     errorCode?: string;
   },
 ): Promise<void> => {
@@ -508,6 +551,7 @@ export const recordOperatorAudit = async (
       actor_reference,
       action,
       stream_id,
+      target_operator_id,
       outcome,
       error_code
     )
@@ -517,6 +561,7 @@ export const recordOperatorAudit = async (
       ${input.operatorEmail},
       ${input.action},
       ${input.streamId ?? null},
+      ${input.targetOperatorId ?? null},
       ${input.outcome},
       ${input.errorCode ?? null}
     )
@@ -540,10 +585,12 @@ const toOperator = (row: {
   operator_id: string;
   email: string;
   enabled: boolean;
+  can_manage_operators: boolean;
 }): OperatorRecord => ({
   operatorId: row.operator_id,
   email: row.email,
   enabled: row.enabled,
+  canManageOperators: row.can_manage_operators,
 });
 
 const readTransports = (value: unknown): readonly string[] => {
@@ -553,7 +600,7 @@ const readTransports = (value: unknown): readonly string[] => {
   return value.filter((item) => typeof item === "string");
 };
 
-const withReservedTransaction = async <T>(
+export const withOperatorTransaction = async <T>(
   sql: Sql,
   operation: (tx: Sql) => Promise<T>,
 ): Promise<T> => {

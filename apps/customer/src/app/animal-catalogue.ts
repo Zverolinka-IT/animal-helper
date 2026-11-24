@@ -15,6 +15,21 @@ export function searchAnimals(animals: CatalogueAnimal[], query: string): Catalo
   })
 }
 
+export function reportedSpeciesId(animal: { id: string; speciesKey?: string }) {
+  return animal.speciesKey ?? animal.id
+}
+
+export function placementId(root: AnimalBranch, path: readonly string[], speciesId: string) {
+  let branch = root
+  for (const id of path) {
+    const next = branch.children.find(node => node.id === id)
+    if (next?.kind !== 'branch') return speciesId
+    branch = next
+  }
+  const animal = branch.children.find(node => node.kind === 'animal' && reportedSpeciesId(node) === speciesId)
+  return animal?.kind === 'animal' ? animal.id : speciesId
+}
+
 export function catalogueAnimals(root: AnimalBranch): CatalogueAnimal[] {
   const animals: CatalogueAnimal[] = []
   function visit(branch: AnimalBranch, path: string[]) {

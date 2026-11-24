@@ -86,7 +86,11 @@ export {
   PRIVATE_RECORD_SCHEMA_VERSION,
   conditionSymptomSchema,
   contactPayloadV1Schema,
+  reportOutcomeSchema,
+  strayBehaviourSchema,
+  type ReportOutcome,
   formSnapshotV1Schema,
+  draftClosureSchema,
   locationPayloadV1Schema,
   mediaRefPayloadV1Schema,
   parseFormSnapshot,
@@ -100,3 +104,61 @@ export {
   type PrivateRecordPayload,
   type TextPayload,
 } from "./private-payloads.js";
+export {
+  adminCaseCommandSchema,
+  adminCaseRequestSchema,
+  adminCaseSearchSchema,
+  type AdminCaseCommand,
+  type AdminCaseRequest,
+  type AdminCaseSearch,
+} from "./admin-case.js";
+export {
+  operatorInvitationRequestSchema,
+  type OperatorInvitation,
+  type OperatorAccount,
+  operatorManagementRequestSchema,
+} from "./admin-operators.js";
+export {
+  contactCoordinatesSchema,
+  contactBoundarySchema,
+  contactCoverageSchema,
+  contactDirectoryDocumentSchema,
+  contactDirectoryEntrySchema,
+  contactDirectoryIssues,
+  contactDirectoryRequestSchema,
+  contactHoursSchema,
+  contactServiceKeys,
+  guidanceContactKeys,
+  splitContactPhones,
+  publicContactDirectorySchema,
+  type AdminContactDirectory,
+  type ContactBoundary,
+  type ContactCoordinates,
+  type ContactDirectoryDocument,
+  type ContactDirectoryEntry,
+  type ContactDirectoryIssue,
+  type ContactDirectoryRequest,
+  type ContactServiceKey,
+  type PublicContactDirectory,
+} from "./contact-directory.js";
+export { syntheticContactDirectoryEntry } from "./contact-directory-fixtures.js";
+export {
+  parseSlovakDistricts,
+  slovakDistricts,
+  type SlovakDistrict,
+} from "./slovak-districts.js";
+export {
+  adminGuidanceContactsSchema,
+  guidanceContactOptionSchema,
+  guidanceContactOptionsSchema,
+  type GuidanceContactOption,
+} from "./guidance-contacts.js";
+export { contactImportKey, planContactImport } from "./contact-directory.js";
+export {
+  reportGuidanceContexts,
+  reportGuidanceProfilesSchema,
+  reportGuidanceProfileSchema,
+  adminReportGuidanceSchema,
+  type ReportGuidanceProfile,
+  type ReportGuidanceContext,
+} from "./report-guidance.js";

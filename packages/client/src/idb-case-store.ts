@@ -96,5 +96,17 @@ export const createIdbRecordStore = <T>(
   };
 };
 
-export const createIdbCaseStore = (indexedDb: IDBFactory): CaseStore =>
-  createIdbRecordStore<StoredCase>(indexedDb, CASE_DATABASE, CASE_STORE);
+const browserLocks = (): Pick<LockManager, "request"> | undefined =>
+  (globalThis as { navigator?: { locks?: Pick<LockManager, "request"> } })
+    .navigator?.locks;
+
+export const createIdbCaseStore = (
+  indexedDb: IDBFactory,
+  locks: Pick<LockManager, "request"> | undefined = browserLocks(),
+): CaseStore => ({
+  ...createIdbRecordStore<StoredCase>(indexedDb, CASE_DATABASE, CASE_STORE),
+  exclusive: async (operation) => {
+    if (!locks) throw new Error("Cross-tab case locking is unavailable");
+    return locks.request(`${CASE_DATABASE}:${CURRENT_KEY}`, operation);
+  },
+});

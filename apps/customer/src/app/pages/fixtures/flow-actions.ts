@@ -67,6 +67,7 @@ export const fixtureFlowActions = {
     const session = previewSession.value
     if (!session) return
     session[scope] = { ...answers }
+    delete session.completionOutcome
     session.adviceReady = true
     if (target === flowPolicy.detailCompletionTarget) session.thankYouReturnTarget = flowPolicy.detailCompletionBack
     return target
@@ -102,8 +103,10 @@ export const fixtureFlowActions = {
   instruction(view: InstructionsView, action: InstructionAction) {
     if (!view.allowedActions.includes(action.id) || !view.footerActions.includes(action)) return
     if (!(flowPolicy.instructionTargets as readonly string[]).includes(action.target)) return
-    if (previewSession.value && (flowPolicy.thankYouTargets as readonly string[]).includes(action.target))
+    if (previewSession.value && (flowPolicy.thankYouTargets as readonly string[]).includes(action.target)) {
       previewSession.value.thankYouReturnTarget = view.screen
+      if (action.id === 'resolved' || action.id === 'unresolved') previewSession.value.completionOutcome = action.id
+    }
     return action.target
   },
   instructionBackTargets(view: InstructionsView): readonly string[] {

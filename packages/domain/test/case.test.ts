@@ -18,6 +18,14 @@ import {
   type RecordedEvent,
 } from "../src/index.js";
 
+const requiredAttachments: readonly CaseCommand[] = (
+  ["location", "form_snapshot", "contact"] as const
+).map((kind) => ({
+  type: "attach_private_data",
+  kind,
+  privateRecordId: `required-${kind}`,
+}));
+
 const applyFrom = (
   start: CaseState,
   commands: readonly CaseCommand[],
@@ -46,6 +54,7 @@ describe("decideCase and evolveCase", () => {
     expect(state).toEqual({
       status: "draft",
       attachedPrivateRecordIds: [],
+      attachedPrivateRecordKinds: [],
       privateDataPurged: false,
     });
   });
@@ -88,7 +97,10 @@ describe("decideCase and evolveCase", () => {
       error: { code: "PRIVATE_RECORD_ALREADY_ATTACHED" },
     });
 
-    const submitted = applyFrom(attached, [{ type: "submit_draft" }]);
+    const submitted = applyFrom(attached, [
+      ...requiredAttachments,
+      { type: "submit_draft" },
+    ]);
     expect(
       decideCase(submitted, {
         type: "attach_private_data",
@@ -109,6 +121,7 @@ describe("decideCase and evolveCase", () => {
         privateRecordId: "record-1",
         kind: "contact",
       },
+      ...requiredAttachments,
       { type: "submit_draft" },
       { type: "start_review" },
       { type: "complete_case" },
@@ -133,9 +146,36 @@ describe("decideCase and evolveCase", () => {
     });
   });
 
+  it("requires location, animal details, and contact choices before submission", () => {
+    const draft = applyFrom(initialCaseState, [{ type: "create_draft" }]);
+    expect(decideCase(draft, { type: "submit_draft" })).toEqual({
+      ok: false,
+      error: { code: "INCOMPLETE_REPORT" },
+    });
+    for (const missing of ["location", "form_snapshot", "contact"]) {
+      const partial = applyFrom(
+        draft,
+        requiredAttachments.filter(
+          (command) =>
+            command.type === "attach_private_data" && command.kind !== missing,
+        ),
+      );
+      expect(decideCase(partial, { type: "submit_draft" })).toEqual({
+        ok: false,
+        error: { code: "INCOMPLETE_REPORT" },
+      });
+    }
+    expect(
+      decideCase(applyFrom(draft, requiredAttachments), {
+        type: "submit_draft",
+      }).ok,
+    ).toBe(true);
+  });
+
   it("rejects complete_case before review", () => {
     const submitted = applyFrom(initialCaseState, [
       { type: "create_draft" },
+      ...requiredAttachments,
       { type: "submit_draft" },
     ]);
 
@@ -179,7 +219,10 @@ describe("effectsFromTransition", () => {
       [{ type: "schedule_draft_expiry" }],
     );
 
-    const submitted = applyFrom(created, [{ type: "submit_draft" }]);
+    const submitted = applyFrom(created, [
+      ...requiredAttachments,
+      { type: "submit_draft" },
+    ]);
     expect(
       effectsFromTransition(submitted, [{ type: "draft_submitted" }]),
     ).toEqual([{ type: "notify_case_queued" }]);
@@ -196,7 +239,11 @@ describe("effectsFromTransition", () => {
     const completedEmpty = evolveCase(submitted, { type: "case_completed" });
     expect(
       effectsFromTransition(completedEmpty, [{ type: "case_completed" }]),
-    ).toEqual([]);
+    ).toEqual([{ type: "schedule_private_data_purge" }]);
+    expect(decideCase(completedEmpty, { type: "purge_private_data" })).toEqual({
+      ok: true,
+      value: [{ type: "private_data_purged" }],
+    });
   });
 });
 

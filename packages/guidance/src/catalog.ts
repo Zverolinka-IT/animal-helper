@@ -1,4 +1,5 @@
 import animalKindsJson from "./generated/animal-kinds.json" with { type: "json" };
+import injuredPickerKindsJson from "./generated/injured-picker-kinds.json" with { type: "json" };
 
 import {
   isAuthorityKey,
@@ -209,7 +210,13 @@ const parseCatalog = (value: unknown): readonly AnimalKind[] => {
   return kinds;
 };
 
-export const animalKinds = parseCatalog(animalKindsJson);
+// The second file is the injured picker species that are not in the original
+// matrices. They identify the animal on a report. Species-specific guidance
+// is still the original catalogue until those flows are replaced.
+export const animalKinds = parseCatalog([
+  ...animalKindsJson,
+  ...injuredPickerKindsJson,
+]);
 
 const kindsByKey = new Map(animalKinds.map((kind) => [kind.key, kind]));
 

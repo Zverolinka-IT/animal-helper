@@ -1,0 +1,954 @@
+{
+  "kind": "branch",
+  "id": "root",
+  "label": "O aké zviera ide?",
+  "otherLabel": "Iné zviera",
+  "children": [
+    {
+      "kind": "branch",
+      "id": "g0001",
+      "label": "Domáce",
+      "otherLabel": "Iné domáce zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "domestic_ferret",
+          "label": "Fretka"
+        },
+        {
+          "kind": "animal",
+          "id": "g0001-exotic_exotic_snake",
+          "label": "Exotický had",
+          "speciesKey": "exotic_exotic_snake"
+        },
+        {
+          "kind": "animal",
+          "id": "g0001-exotic_exotic_lizard",
+          "label": "Exotická jašterica",
+          "speciesKey": "exotic_exotic_lizard"
+        },
+        {
+          "kind": "animal",
+          "id": "g0001-a0004",
+          "label": "Korytnačka písmenková",
+          "speciesKey": "a0004"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_rabbit",
+          "label": "Králik domáci"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_guinea_pig",
+          "label": "Morča"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_parrot",
+          "label": "Papagáj"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_chinchilla",
+          "label": "Činčila"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_hamster",
+          "label": "Škrečok"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_cat",
+          "label": "Mačka"
+        },
+        {
+          "kind": "animal",
+          "id": "domestic_dog",
+          "label": "Pes"
+        }
+      ]
+    },
+    {
+      "kind": "branch",
+      "id": "g0002",
+      "label": "Hospodárske",
+      "otherLabel": "Iné hospodárske zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "farm_goat",
+          "label": "Koza"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_cow",
+          "label": "Krava"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_rabbit",
+          "label": "Králik domáci"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_horse",
+          "label": "Kôň"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_sheep",
+          "label": "Ovca"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_pig",
+          "label": "Prasa"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_donkey",
+          "label": "Somár"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_pigeon",
+          "label": "Holub domáci"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_goose",
+          "label": "Hus domáca"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_duck",
+          "label": "Kačka kačka domáca"
+        },
+        {
+          "kind": "animal",
+          "id": "a0023",
+          "label": "Morka domáca"
+        },
+        {
+          "kind": "animal",
+          "id": "farm_chicken",
+          "label": "Sliepka domáca"
+        }
+      ]
+    },
+    {
+      "kind": "branch",
+      "id": "g0003",
+      "label": "Vodné",
+      "otherLabel": "Iné zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "a0025",
+          "label": "Raky"
+        },
+        {
+          "kind": "animal",
+          "id": "aquatic_aquatic_turtle",
+          "label": "Korytnačka močiarna"
+        },
+        {
+          "kind": "animal",
+          "id": "g0003-aquatic_otter",
+          "label": "Vydra riečna",
+          "speciesKey": "aquatic_otter"
+        }
+      ]
+    },
+    {
+      "kind": "branch",
+      "id": "g0004",
+      "label": "Obojživelníky a plazy",
+      "otherLabel": "Iné zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "amphibian_frog",
+          "label": "Žaby"
+        },
+        {
+          "kind": "animal",
+          "id": "a0144",
+          "label": "Mloky a salamandry"
+        },
+        {
+          "kind": "animal",
+          "id": "a0145",
+          "label": "Jašterice"
+        },
+        {
+          "kind": "branch",
+          "id": "g0009",
+          "label": "Hady",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0029",
+              "label": "Slepúch lámavý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0030",
+              "label": "Slepúch východný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0031",
+              "label": "Užovka fŕkaná"
+            },
+            {
+              "kind": "animal",
+              "id": "a0032",
+              "label": "Užovka hladká"
+            },
+            {
+              "kind": "animal",
+              "id": "reptile_grass_snake",
+              "label": "Užovka obyčajná"
+            },
+            {
+              "kind": "animal",
+              "id": "a0034",
+              "label": "Užovka stromová"
+            },
+            {
+              "kind": "animal",
+              "id": "a0035",
+              "label": "Vretenica obyčajná"
+            },
+            {
+              "kind": "animal",
+              "id": "a0190",
+              "label": "Vretenica obyčajná – v horách"
+            }
+          ]
+        },
+        {
+          "kind": "animal",
+          "id": "reptile_turtle",
+          "label": "Korytnačka močiarna"
+        }
+      ]
+    },
+    {
+      "kind": "branch",
+      "id": "g0005",
+      "label": "Divožijúce cicavce",
+      "otherLabel": "Iné zviera",
+      "children": [
+        {
+          "kind": "branch",
+          "id": "g0010",
+          "label": "Kopytníky",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0036",
+              "label": "Daniel škvrnitý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0037",
+              "label": "Diviak lesný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0038",
+              "label": "Jeleník (pasrnec) bielochvostý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0039",
+              "label": "Jeleň lesný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0040",
+              "label": "Jeleň sika"
+            },
+            {
+              "kind": "animal",
+              "id": "a0041",
+              "label": "Kamzík vrchovský alpský"
+            },
+            {
+              "kind": "animal",
+              "id": "a0042",
+              "label": "Kamzík vrchovský tatranský"
+            },
+            {
+              "kind": "animal",
+              "id": "a0043",
+              "label": "Los mokraďový"
+            },
+            {
+              "kind": "animal",
+              "id": "a0044",
+              "label": "Muflón lesný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0045",
+              "label": "Srnec lesný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0046",
+              "label": "Zubor európsky"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0011",
+          "label": "Veľké šelmy",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "wild_bear",
+              "label": "Medveď"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_lynx",
+              "label": "Rys"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_wolf",
+              "label": "Vlk"
+            },
+            {
+              "kind": "animal",
+              "id": "a0050",
+              "label": "Šakal"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0012",
+          "label": "Malé a stredné",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0051",
+              "label": "Bielozúbka"
+            },
+            {
+              "kind": "animal",
+              "id": "aquatic_beaver",
+              "label": "Bobor"
+            },
+            {
+              "kind": "animal",
+              "id": "a0053",
+              "label": "Dulovnica"
+            },
+            {
+              "kind": "animal",
+              "id": "a0054",
+              "label": "Hraboš poľný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0055",
+              "label": "Hraboš severský panónsky"
+            },
+            {
+              "kind": "animal",
+              "id": "a0056",
+              "label": "Hraboš snežný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0057",
+              "label": "Hraboš tatranský"
+            },
+            {
+              "kind": "animal",
+              "id": "a0058",
+              "label": "Hranostaj čiernochvostý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0059",
+              "label": "Jazvec lesný"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_hedgehog",
+              "label": "Jež"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_mole",
+              "label": "Krt"
+            },
+            {
+              "kind": "animal",
+              "id": "a0062",
+              "label": "Králik divý"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_marten",
+              "label": "Kuna"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_weasel",
+              "label": "Lasica"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_fox",
+              "label": "Líška"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_wildcat",
+              "label": "Mačka divá"
+            },
+            {
+              "kind": "animal",
+              "id": "exotic_raccoon",
+              "label": "Medvedík čistotný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0069",
+              "label": "Myšovka"
+            },
+            {
+              "kind": "animal",
+              "id": "a0070",
+              "label": "Norok európsky"
+            },
+            {
+              "kind": "animal",
+              "id": "a0071",
+              "label": "Norok severoamerický"
+            },
+            {
+              "kind": "animal",
+              "id": "a0072",
+              "label": "Nutria riečna"
+            },
+            {
+              "kind": "animal",
+              "id": "a0073",
+              "label": "Ondatra pižmová"
+            },
+            {
+              "kind": "animal",
+              "id": "a0074",
+              "label": "Piskor"
+            },
+            {
+              "kind": "animal",
+              "id": "wild_dormouse",
+              "label": "Plch"
+            },
+            {
+              "kind": "animal",
+              "id": "a0076",
+              "label": "Psík medvedíkovitý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0077",
+              "label": "Svišť vrchovský tatranský"
+            },
+            {
+              "kind": "animal",
+              "id": "a0078",
+              "label": "Syseľ pasienkový"
+            },
+            {
+              "kind": "animal",
+              "id": "a0079",
+              "label": "Tchor stepný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0080",
+              "label": "Tchor tmavý"
+            },
+            {
+              "kind": "animal",
+              "id": "a0081",
+              "label": "Veverica stromová"
+            },
+            {
+              "kind": "animal",
+              "id": "g0012-aquatic_otter",
+              "label": "Vydra riečna",
+              "speciesKey": "aquatic_otter"
+            },
+            {
+              "kind": "animal",
+              "id": "a0082",
+              "label": "Zajac poľný"
+            },
+            {
+              "kind": "animal",
+              "id": "a0083",
+              "label": "Škrečok poľný"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "animal",
+      "id": "wild_bat",
+      "label": "Netopiere"
+    },
+    {
+      "kind": "branch",
+      "id": "g0007",
+      "label": "Vtáky",
+      "otherLabel": "Iné zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "a0148",
+          "label": "Bližšie neurčené mláďa"
+        },
+        {
+          "kind": "animal",
+          "id": "a0149",
+          "label": "Neviem určiť"
+        },
+        {
+          "kind": "branch",
+          "id": "g0013",
+          "label": "Veľké vtáky a dravce",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "bird_buzzard",
+              "label": "Myšiak"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_goshawk",
+              "label": "Jastrab"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_harrier",
+              "label": "Kaňa"
+            },
+            {
+              "kind": "animal",
+              "id": "a0087",
+              "label": "Orliak"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_eagle",
+              "label": "Orol"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_falcon",
+              "label": "Sokol"
+            },
+            {
+              "kind": "animal",
+              "id": "a0090",
+              "label": "Sup"
+            },
+            {
+              "kind": "animal",
+              "id": "g0013-a0091",
+              "label": "Drop",
+              "speciesKey": "a0091"
+            },
+            {
+              "kind": "animal",
+              "id": "g0013-a0092",
+              "label": "Bocian",
+              "speciesKey": "a0092"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_heron_wading",
+              "label": "Volavka"
+            }
+          ]
+        },
+        {
+          "kind": "animal",
+          "id": "bird_owl",
+          "label": "Sovy"
+        },
+        {
+          "kind": "branch",
+          "id": "g0014",
+          "label": "Vodné a močiarne",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "bird_goose",
+              "label": "Hus"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_swan",
+              "label": "Labuť"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_duck",
+              "label": "Kačica"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_cormorant",
+              "label": "Kormorán"
+            },
+            {
+              "kind": "animal",
+              "id": "a0097",
+              "label": "Pelikán"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_heron_waterfowl",
+              "label": "Volavka"
+            },
+            {
+              "kind": "animal",
+              "id": "g0014-a0092",
+              "label": "Bocian",
+              "speciesKey": "a0092"
+            },
+            {
+              "kind": "animal",
+              "id": "a0098",
+              "label": "Bučiak"
+            },
+            {
+              "kind": "animal",
+              "id": "a0099",
+              "label": "Ibisovec"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_crane",
+              "label": "Žeriav"
+            },
+            {
+              "kind": "animal",
+              "id": "a0101",
+              "label": "Sluka"
+            },
+            {
+              "kind": "animal",
+              "id": "a0102",
+              "label": "Behavec"
+            },
+            {
+              "kind": "animal",
+              "id": "a0103",
+              "label": "Brehár"
+            },
+            {
+              "kind": "animal",
+              "id": "a0104",
+              "label": "Kalužiak"
+            },
+            {
+              "kind": "animal",
+              "id": "a0105",
+              "label": "Kulík"
+            },
+            {
+              "kind": "animal",
+              "id": "a0106",
+              "label": "Pobrežník"
+            },
+            {
+              "kind": "animal",
+              "id": "a0107",
+              "label": "Rybár"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_gull",
+              "label": "Čajka"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0015",
+          "label": "Hrabavé a poľné vtáky",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0109",
+              "label": "Bažant"
+            },
+            {
+              "kind": "animal",
+              "id": "a0110",
+              "label": "Jarabica"
+            },
+            {
+              "kind": "animal",
+              "id": "a0111",
+              "label": "Jariabok"
+            },
+            {
+              "kind": "animal",
+              "id": "a0112",
+              "label": "Prepelica"
+            },
+            {
+              "kind": "animal",
+              "id": "g0015-a0091",
+              "label": "Drop",
+              "speciesKey": "a0091"
+            },
+            {
+              "kind": "animal",
+              "id": "a0113",
+              "label": "Hlucháň"
+            },
+            {
+              "kind": "animal",
+              "id": "a0114",
+              "label": "Tetrov"
+            },
+            {
+              "kind": "animal",
+              "id": "a0115",
+              "label": "Kuropta"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0016",
+          "label": "Holuby a hrdličky",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "bird_pigeon",
+              "label": "Holub domáci"
+            },
+            {
+              "kind": "animal",
+              "id": "a0117",
+              "label": "Holub hrivnák"
+            },
+            {
+              "kind": "animal",
+              "id": "a0118",
+              "label": "Holub plúžik"
+            },
+            {
+              "kind": "animal",
+              "id": "a0119",
+              "label": "Hrdlička poľná"
+            },
+            {
+              "kind": "animal",
+              "id": "a0120",
+              "label": "Hrdlička záhradná"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0017",
+          "label": "Vrany, straky a podobné",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "bird_rook",
+              "label": "Havran"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_raven",
+              "label": "Krkavec"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_jay",
+              "label": "Sojka"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_magpie",
+              "label": "Straka"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_crow",
+              "label": "Vrana"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0018",
+          "label": "Ďatle a lastovičky",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0126",
+              "label": "Ďateľ"
+            },
+            {
+              "kind": "animal",
+              "id": "a0127",
+              "label": "Žlna"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_house_martin",
+              "label": "Belorítka"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_swift",
+              "label": "Dážďovník"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_swallow",
+              "label": "Lastovička"
+            }
+          ]
+        },
+        {
+          "kind": "branch",
+          "id": "g0019",
+          "label": "Malé a stredné",
+          "otherLabel": "Iné zviera",
+          "children": [
+            {
+              "kind": "animal",
+              "id": "a0131",
+              "label": "Kukučka"
+            },
+            {
+              "kind": "animal",
+              "id": "a0132",
+              "label": "Rybárik"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_finch",
+              "label": "Pinka"
+            },
+            {
+              "kind": "animal",
+              "id": "a0134",
+              "label": "Stehlík"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_tit",
+              "label": "Sýkorka"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_sparrow",
+              "label": "Vrabec"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_thrush",
+              "label": "Drozd"
+            },
+            {
+              "kind": "animal",
+              "id": "a0138",
+              "label": "Vlha"
+            },
+            {
+              "kind": "animal",
+              "id": "bird_starling",
+              "label": "Škorec"
+            },
+            {
+              "kind": "animal",
+              "id": "a0140",
+              "label": "Žltochvost"
+            },
+            {
+              "kind": "animal",
+              "id": "a0141",
+              "label": "Strakoš"
+            },
+            {
+              "kind": "animal",
+              "id": "a0142",
+              "label": "Trasochvost"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "branch",
+      "id": "g0020",
+      "label": "Exotické, uniknuté alebo nepôvodné zvieratá",
+      "otherLabel": "Iné exotické zviera",
+      "children": [
+        {
+          "kind": "animal",
+          "id": "g0020-a0004",
+          "label": "Korytnačka písmenková",
+          "speciesKey": "a0004"
+        },
+        {
+          "kind": "animal",
+          "id": "exotic_parrot",
+          "label": "Papagáj"
+        },
+        {
+          "kind": "animal",
+          "id": "g0020-exotic_exotic_snake",
+          "label": "Exotický had",
+          "speciesKey": "exotic_exotic_snake"
+        },
+        {
+          "kind": "animal",
+          "id": "g0020-exotic_exotic_lizard",
+          "label": "Exotická jašterica",
+          "speciesKey": "exotic_exotic_lizard"
+        },
+        {
+          "kind": "animal",
+          "id": "a0168",
+          "label": "Iné exotické zviera / neviem určiť"
+        }
+      ]
+    }
+  ]
+}

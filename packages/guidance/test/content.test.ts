@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   bundledContentHash,
+  assertPublishableDocument,
   bundledGuidanceDocument,
   bundledPublicGuidance,
   canonicalizeGuidanceDocument,
@@ -16,6 +17,28 @@ import {
 } from "../src/index.js";
 
 describe("bundled injured guidance", () => {
+  it("rejects empty, truncated and incomplete publications instead of replacing fallback content", () => {
+    expect(() =>
+      assertPublishableDocument(bundledGuidanceDocument()),
+    ).not.toThrow();
+    expect(() => assertPublishableDocument({ copy: {}, cells: [] })).toThrow();
+    const guidance = bundledPublicGuidance();
+    expect(() => parsePublicGuidance({ ...guidance, kinds: {} })).toThrow();
+    expect(() =>
+      parsePublicGuidance({
+        ...guidance,
+        kinds: { ...guidance.kinds, domestic_cat: { items: [] } },
+      }),
+    ).toThrow();
+    const document = bundledGuidanceDocument();
+    const cells = document.cells.map((cell) =>
+      cell.kindKey === "domestic_cat" &&
+      cell.instructionKey === "contact.primary"
+        ? { ...cell, copy: {} }
+        : cell,
+    );
+    expect(() => assertPublishableDocument({ ...document, cells })).toThrow();
+  });
   it("keeps a stable document hash matching the generated fallback", () => {
     const document = bundledGuidanceDocument();
     const hash = createHash("sha256")

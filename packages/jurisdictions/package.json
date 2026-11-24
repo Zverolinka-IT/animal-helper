@@ -1,0 +1,21 @@
+{
+  "name": "@animal-helper/jurisdictions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "description": "Public contact-directory selection and Slovak service availability.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@animal-helper/contracts": "workspace:*"
+  }
+}

@@ -50,6 +50,9 @@ export type ApplyCommandInput = Readonly<{
     id: string;
     payload: PrivateRecordPayload;
   }>;
+  // A read-only reporter capability may recover an earlier acknowledgement,
+  // but must never apply a new command.
+  duplicateOnly?: boolean;
   now: Date;
 }>;
 
@@ -166,7 +169,7 @@ export const applyCommand = async (
   }
 };
 
-const applyCommandInTransaction = async (
+export const applyCommandInTransaction = async (
   sql: Queryable,
   input: ApplyCommandInput,
 ): Promise<ApplyResult> => {
@@ -189,6 +192,14 @@ const applyCommandInTransaction = async (
     return reject(sql, input, { code: "PRIVATE_RECORD_REQUIRED" });
   }
 
+  // Serialize before checking the receipt or reading events. Creating the row
+  // first also serializes simultaneous create retries for a new stream.
+  if (input.domainCommand.type === "create_draft") {
+    await sql`insert into ah.streams (stream_id) values (${input.streamId}::uuid)
+      on conflict (stream_id) do nothing`;
+  }
+  await sql`select stream_id from ah.streams where stream_id = ${input.streamId}::uuid for update`;
+
   const [accepted] = await sql<AcceptedCommandRow[]>`
     select command_id, content_hash, committed_version, public_state
     from ah.accepted_commands
@@ -209,6 +220,10 @@ const applyCommandInTransaction = async (
         eventIds: [],
       },
     };
+  }
+
+  if (input.duplicateOnly === true) {
+    return reject(sql, input, { code: "ACTOR_NOT_PERMITTED" });
   }
 
   const recordedEvents = await loadRecordedEvents(sql, input.streamId);
@@ -236,6 +251,14 @@ const applyCommandInTransaction = async (
   }
 
   const nextState = foldCaseEvents([...decoded.value, ...decision.value]);
+  // Client clocks can be wrong or deliberately forged. Canonical event times
+  // are server acceptance times and never move backwards within a stream.
+  const eventTime = new Date(
+    Math.max(
+      input.now.getTime(),
+      new Date(recordedEvents.at(-1)?.occurredAt ?? input.now).getTime(),
+    ),
+  );
   const eventIds: string[] = [];
   let version = input.expectedVersion;
 
@@ -250,7 +273,7 @@ const applyCommandInTransaction = async (
         ${version}::integer,
         ${recordedTypeFor(domainEvent)},
         1::integer,
-        ${input.occurredAt}::timestamptz,
+        ${eventTime}::timestamptz,
         ${input.actorKind},
         ${input.actorReference ?? null},
         ${input.commandId}::uuid,
@@ -325,12 +348,11 @@ const applyCommandInTransaction = async (
       where stream_id = ${input.streamId}::uuid
         and deleted_at is null
     `;
+    await sql`delete from ah.admin_case_work where stream_id = ${input.streamId}::uuid`;
   }
 
-  const createdAt = new Date(
-    recordedEvents.at(0)?.occurredAt ?? input.occurredAt,
-  );
-  const updatedAt = new Date(input.occurredAt);
+  const createdAt = new Date(recordedEvents.at(0)?.occurredAt ?? eventTime);
+  const updatedAt = eventTime;
 
   await projectCase(sql, {
     streamId: input.streamId,

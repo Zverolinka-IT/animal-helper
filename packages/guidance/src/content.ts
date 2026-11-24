@@ -1,8 +1,15 @@
+import { parseReportProfiles } from "./report-flows.js";
 import fallbackJson from "./generated/guidance-fallback.json" with { type: "json" };
+import {
+  publicContactDirectorySchema,
+  contactServiceKeys,
+  type PublicContactDirectory,
+  type ReportGuidanceProfile,
+} from "@animal-helper/contracts";
 
 import { animalKinds, findAnimalKind } from "./catalog.js";
 import { copyLooksSafe } from "./copy.js";
-import { isContactKey, isScreenKey, type ScreenKey } from "./keys.js";
+import { isScreenKey, type ScreenKey } from "./keys.js";
 import {
   BUNDLED_REVISION_ID,
   COPY_MAX_LENGTH,
@@ -10,11 +17,13 @@ import {
   GUIDANCE_JURISDICTION,
   GUIDANCE_LOCALE,
   GUIDANCE_SCHEMA_VERSION,
-  instructionSlotKeys,
+  slotsForInstruction,
+  polarityForInstruction,
+  isContactOptionInstruction,
+  isContactInstruction,
   isCopySlotKey,
   isInstructionKey,
   isInstructionPolarity,
-  polarityFor,
   screenForInstruction,
   type CopySlotKey,
   type InstructionKey,
@@ -43,9 +52,11 @@ export type GuidanceCell = {
   sortOrder: number;
   copy: Readonly<Partial<Record<CopySlotKey, string>>>;
   actionTargetKey?: string;
+  clinicVariant?: "standard" | "protected";
 };
 
 export type GuidanceDocument = {
+  reportProfiles?: readonly ReportGuidanceProfile[];
   copy: Readonly<Record<string, string>>;
   cells: readonly GuidanceCell[];
 };
@@ -61,13 +72,30 @@ export type GuidanceItem = {
   polarity: InstructionPolarity;
   slots: Readonly<Partial<Record<CopySlotKey, string>>>;
   action?: GuidanceAction;
+  clinicVariant?: "standard" | "protected";
 };
+
+function parseClinicVariant(
+  value: unknown,
+  service: string | undefined,
+): "standard" | "protected" | undefined {
+  if (value === undefined) return undefined;
+  if (
+    (value !== "standard" && value !== "protected") ||
+    !["vet_clinic", "vet_exotic"].includes(service ?? "")
+  )
+    throw new GuidanceValidationError(
+      "invalid veterinary presentation variant",
+    );
+  return value;
+}
 
 export type PublicGuidanceKind = {
   items: readonly GuidanceItem[];
 };
 
 export type PublicGuidance = {
+  reportProfiles?: readonly ReportGuidanceProfile[];
   schemaVersion: typeof GUIDANCE_SCHEMA_VERSION;
   locale: typeof GUIDANCE_LOCALE;
   jurisdiction: typeof GUIDANCE_JURISDICTION;
@@ -76,6 +104,7 @@ export type PublicGuidance = {
   contentHash: string;
   source: "bundled" | "published";
   kinds: Readonly<Record<string, PublicGuidanceKind>>;
+  contactDirectory?: PublicContactDirectory;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -118,7 +147,7 @@ const parseCellCopy = (
   path: string,
 ): GuidanceCell["copy"] => {
   const copy = parseCopyMap(value, path);
-  const allowed = new Set(instructionSlotKeys[instructionKey]);
+  const allowed = new Set(slotsForInstruction(instructionKey));
   for (const key of Object.keys(copy)) {
     if (!isCopySlotKey(key) || !allowed.has(key)) {
       throw new GuidanceValidationError(`unknown copy slot ${key}`);
@@ -154,7 +183,10 @@ const parseCell = (value: unknown, path: string): GuidanceCell => {
     value.actionTargetKey === undefined || value.actionTargetKey === null
       ? undefined
       : requiredString(value.actionTargetKey, `${path}.actionTargetKey`);
-  if (actionTargetKey !== undefined && !isContactKey(actionTargetKey)) {
+  if (
+    actionTargetKey !== undefined &&
+    !contactServiceKeys.some((key) => key === actionTargetKey)
+  ) {
     throw new GuidanceValidationError(
       `invalid action target ${actionTargetKey}`,
     );
@@ -173,6 +205,11 @@ const parseCell = (value: unknown, path: string): GuidanceCell => {
   if (actionTargetKey !== undefined) {
     cell.actionTargetKey = actionTargetKey;
   }
+  const clinicVariant = parseClinicVariant(
+    value.clinicVariant,
+    actionTargetKey,
+  );
+  if (clinicVariant) cell.clinicVariant = clinicVariant;
   return cell;
 };
 
@@ -195,7 +232,27 @@ export const parseGuidanceDocument = (value: unknown): GuidanceDocument => {
     }
     seen.add(key);
   }
-  return { copy, cells };
+  for (const kindKey of new Set(
+    cells
+      .filter((cell) => isContactOptionInstruction(cell.instructionKey))
+      .map((cell) => cell.kindKey),
+  )) {
+    const contacts = cells.filter(
+      (cell) =>
+        cell.kindKey === kindKey && isContactInstruction(cell.instructionKey),
+    );
+    if (
+      contacts.some(
+        (cell) => !isContactOptionInstruction(cell.instructionKey),
+      ) ||
+      !contacts.some((cell) => cell.applicability === "on")
+    ) {
+      throw new GuidanceValidationError(
+        `invalid contact options for ${kindKey}`,
+      );
+    }
+  }
+  return { copy, cells, ...readProfiles(value.reportProfiles) };
 };
 
 const parseAction = (value: unknown, path: string): GuidanceAction => {
@@ -206,7 +263,7 @@ const parseAction = (value: unknown, path: string): GuidanceAction => {
     throw new GuidanceValidationError(`invalid ${path}.kind`);
   }
   const targetKey = requiredString(value.targetKey, `${path}.targetKey`);
-  if (!isContactKey(targetKey)) {
+  if (!contactServiceKeys.some((key) => key === targetKey)) {
     throw new GuidanceValidationError(`invalid ${path}.targetKey`);
   }
   return { kind: "call-contact", targetKey };
@@ -230,7 +287,7 @@ const parseItem = (value: unknown, path: string): GuidanceItem => {
   const polarity = requiredString(value.polarity, `${path}.polarity`);
   if (
     !isInstructionPolarity(polarity) ||
-    polarity !== polarityFor[instructionKey]
+    polarity !== polarityForInstruction(instructionKey)
   ) {
     throw new GuidanceValidationError(`invalid ${path}.polarity`);
   }
@@ -238,7 +295,7 @@ const parseItem = (value: unknown, path: string): GuidanceItem => {
     throw new GuidanceValidationError(`invalid ${path}.slots`);
   }
   const slots: Partial<Record<CopySlotKey, string>> = {};
-  const allowed = new Set(instructionSlotKeys[instructionKey]);
+  const allowed = new Set(slotsForInstruction(instructionKey));
   for (const [key, entry] of Object.entries(value.slots)) {
     if (!isCopySlotKey(key) || !allowed.has(key)) {
       throw new GuidanceValidationError(`unknown slot ${key}`);
@@ -260,6 +317,11 @@ const parseItem = (value: unknown, path: string): GuidanceItem => {
   if (value.action !== undefined) {
     item.action = parseAction(value.action, `${path}.action`);
   }
+  const clinicVariant = parseClinicVariant(
+    value.clinicVariant,
+    item.action?.targetKey,
+  );
+  if (clinicVariant) item.clinicVariant = clinicVariant;
   return item;
 };
 
@@ -312,6 +374,14 @@ export const parsePublicGuidance = (value: unknown): PublicGuidance => {
   if (source !== "bundled" && source !== "published") {
     throw new GuidanceValidationError("invalid source");
   }
+  const kinds = parseKinds(value.kinds);
+  assertCompleteKinds(kinds);
+  const directory =
+    value.contactDirectory === undefined
+      ? undefined
+      : publicContactDirectorySchema.safeParse(value.contactDirectory);
+  if (directory && !directory.success)
+    throw new GuidanceValidationError("invalid contact directory");
   return {
     schemaVersion: GUIDANCE_SCHEMA_VERSION,
     locale: GUIDANCE_LOCALE,
@@ -320,7 +390,9 @@ export const parsePublicGuidance = (value: unknown): PublicGuidance => {
     revisionId,
     contentHash,
     source,
-    kinds: parseKinds(value.kinds),
+    kinds,
+    ...readProfiles(value.reportProfiles),
+    ...(directory?.success ? { contactDirectory: directory.data } : {}),
   };
 };
 
@@ -329,7 +401,7 @@ const nonemptySlots = (
   instructionKey: InstructionKey,
 ): Partial<Record<CopySlotKey, string>> => {
   const slots: Partial<Record<CopySlotKey, string>> = {};
-  for (const key of instructionSlotKeys[instructionKey]) {
+  for (const key of slotsForInstruction(instructionKey)) {
     const text = copy[key];
     if (text !== undefined && text.trim() !== "") {
       slots[key] = text;
@@ -366,12 +438,14 @@ export const resolveKindItems = (
     const item: GuidanceItem = {
       screenKey,
       instructionKey: cell.instructionKey,
-      polarity: polarityFor[cell.instructionKey],
+      polarity: polarityForInstruction(cell.instructionKey),
       slots,
+      ...(cell.clinicVariant ? { clinicVariant: cell.clinicVariant } : {}),
     };
     if (
       (cell.instructionKey === "contact.primary" ||
-        cell.instructionKey === "contact.secondary") &&
+        cell.instructionKey === "contact.secondary" ||
+        isContactOptionInstruction(cell.instructionKey)) &&
       cell.actionTargetKey !== undefined
     ) {
       item.action = {
@@ -424,6 +498,9 @@ export const resolvePublicGuidance = (
     contentHash: meta.contentHash,
     source: meta.source,
     kinds,
+    ...(document.reportProfiles?.length
+      ? { reportProfiles: document.reportProfiles }
+      : {}),
   };
 };
 
@@ -455,17 +532,92 @@ export const cellsForKind = (
 
 export const assertPublishableDocument = (document: GuidanceDocument): void => {
   parseGuidanceDocument(document);
+  for (const profile of document.reportProfiles ?? []) {
+    if (
+      profile.contacts.some(
+        (contact) =>
+          contact.enabled && (!contact.title.trim() || !contact.body.trim()),
+      )
+    )
+      throw new GuidanceValidationError("incomplete report guidance contact");
+  }
   for (const cell of document.cells) {
     if (cell.applicability !== "on") {
       continue;
     }
     if (
+      slotsForInstruction(cell.instructionKey).some(
+        (key) => !cell.copy[key]?.trim(),
+      )
+    ) {
+      throw new GuidanceValidationError(
+        `incomplete ${cell.instructionKey} for ${cell.kindKey}`,
+      );
+    }
+    if (
       (cell.instructionKey === "contact.primary" ||
-        cell.instructionKey === "contact.secondary") &&
+        cell.instructionKey === "contact.secondary" ||
+        isContactOptionInstruction(cell.instructionKey)) &&
       cell.actionTargetKey === undefined
     ) {
       throw new GuidanceValidationError(
         `contact ${cell.instructionKey} for ${cell.kindKey} is on without a contact key`,
+      );
+    }
+  }
+  const kinds: Record<string, PublicGuidanceKind> = {};
+  for (const kind of animalKinds) {
+    if (kind.injured)
+      kinds[kind.key] = { items: resolveKindItems(kind.key, document) };
+  }
+  assertCompleteKinds(kinds);
+};
+
+// A structurally valid but empty/truncated publication must not replace the
+// bundled fallback. Optional warning cells can be switched off; every supported
+// kind still needs its code-owned primary contact and nonempty instruction copy.
+const assertCompleteKinds = (
+  kinds: Readonly<Record<string, PublicGuidanceKind>>,
+): void => {
+  for (const kind of animalKinds) {
+    if (!kind.injured) continue;
+    const items = kinds[kind.key]?.items;
+    if (!items?.length)
+      throw new GuidanceValidationError(`missing guidance for ${kind.key}`);
+    const seen = new Set<string>();
+    for (const item of items) {
+      if (
+        seen.has(item.instructionKey) ||
+        item.screenKey !==
+          screenForInstruction(item.instructionKey, kind.injured.flowKey)
+      ) {
+        throw new GuidanceValidationError(
+          `invalid instruction mapping for ${kind.key}`,
+        );
+      }
+      seen.add(item.instructionKey);
+      if (isContactOptionInstruction(item.instructionKey) && !item.action) {
+        throw new GuidanceValidationError(
+          `missing contact service for ${kind.key}`,
+        );
+      }
+      if (
+        slotsForInstruction(item.instructionKey).some(
+          (key) => !item.slots[key]?.trim(),
+        )
+      ) {
+        throw new GuidanceValidationError(
+          `incomplete public instruction for ${kind.key}`,
+        );
+      }
+    }
+    if (
+      kind.injured.primaryContact &&
+      !seen.has("contact.primary") &&
+      !items.some((item) => isContactOptionInstruction(item.instructionKey))
+    ) {
+      throw new GuidanceValidationError(
+        `missing primary contact for ${kind.key}`,
       );
     }
   }
@@ -512,3 +664,15 @@ export const bundledPublicGuidance = (): PublicGuidance =>
     contentHash: bundledContentHash(),
     source: "bundled",
   });
+
+function readProfiles(
+  value: unknown,
+): Pick<GuidanceDocument, "reportProfiles"> {
+  if (value === undefined) return {};
+  try {
+    const reportProfiles = parseReportProfiles(value);
+    return reportProfiles.length ? { reportProfiles } : {};
+  } catch {
+    throw new GuidanceValidationError("invalid report profiles");
+  }
+}

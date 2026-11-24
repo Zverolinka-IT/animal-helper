@@ -14,16 +14,14 @@ export const shellFixture = {
     unavailable: '{label}: túto časť aplikácie pripravujeme.'
   },
   menuItems: [
-    { label: 'Moje prípady', icon: 'my-cases', target: '/' },
     { label: 'Domov', icon: 'about', target: '/' },
-    { label: 'Časté otázky a návody', icon: 'faq', target: null },
-    { label: 'Staň sa dobrovoľníkom', icon: 'volunteer', target: null },
-    { label: 'Podpor Zverolinku', icon: 'donation', target: null }
+    { label: 'Návody a príbehy', icon: 'faq', target: null },
+    { label: 'Staňte sa dobrovoľníkom', icon: 'volunteer', target: null },
+    { label: 'Podporte Zverolinku', icon: 'donation', target: null }
   ],
   socials: [
     { name: 'Facebook', icon: 'facebook' },
     { name: 'Instagram', icon: 'instagram' },
-    { name: 'LinkedIn', icon: 'linkedin' },
-    { name: 'TikTok', icon: 'tiktok' }
+    { name: 'LinkedIn', icon: 'linkedin' }
   ]
 }

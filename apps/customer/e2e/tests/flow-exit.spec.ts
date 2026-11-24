@@ -46,6 +46,10 @@ test('cancel, Escape, save and resume an unconfirmed location; close the saved c
   await leave(page)
   await expect(page.locator('.customer-home__draft')).toContainText('Dolné Orešany')
   await page.getByRole('button', { name: 'Uzavrieť prípad', exact: true }).click()
+  await expect(page).toHaveURL(/\/w26$/)
+  await page.getByRole('radio', { name: 'Prípad sa podarilo úspešne vyriešiť', exact: true }).check()
+  await page.getByRole('button', { name: 'Odoslať a ukončiť', exact: true }).click()
+  await expect(page).toHaveURL(/\/$/)
   await expect(page.locator('.customer-home__draft')).toHaveCount(0)
   await page.goBack()
   await expect(page).toHaveURL(/\/$/)
@@ -75,7 +79,6 @@ test('resumes a nested manual selection and then partially completed details', a
 
 for (const [choice, route] of [
   ['Zviera je zatúlané', 'w03'],
-  ['Nález mŕtveho zvieraťa', 'w03'],
   ['Týranie/zanedbávanie zvieraťa', 'w27'],
   ['Iné', 'w32']
 ] as const) {

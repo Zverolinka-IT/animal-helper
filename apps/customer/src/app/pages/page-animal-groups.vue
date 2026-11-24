@@ -9,7 +9,14 @@ import { useRouter } from 'vue-router'
 import { useAutocomplete } from '@/libs/use-autocomplete'
 import { previewSession } from '../preview-flow'
 import { flowActions } from '../flow-client'
-import { catalogueAnimals, searchAnimals, normalizeAnimalSearch, type CatalogueAnimal } from '../animal-catalogue'
+import {
+  catalogueAnimals,
+  searchAnimals,
+  normalizeAnimalSearch,
+  placementId,
+  reportedSpeciesId,
+  type CatalogueAnimal
+} from '../animal-catalogue'
 import type { AnimalGroupsView } from './fixtures/animal-groups'
 
 const props = defineProps<{ view: AnimalGroupsView }>()
@@ -56,7 +63,9 @@ function cardsLeft() {
 }
 const savedIdentification = previewSession.value?.animalIdentification
 const choice = ref(
-  savedIdentification?.kind === 'species' ? (savedIdentification.speciesId ?? '') : (savedIdentification?.kind ?? '')
+  savedIdentification?.kind === 'species'
+    ? placementId(props.view.root, savedIdentification.path, savedIdentification.speciesId)
+    : (savedIdentification?.kind ?? '')
 )
 const description = ref(savedIdentification?.description ?? '')
 const completed = ref(false)
@@ -93,7 +102,14 @@ function confirm() {
       ? { ...context, kind: 'unknown' }
       : choice.value === 'other'
         ? { ...context, kind: 'other', description: description.value.trim() }
-        : { ...context, kind: 'species', speciesId: choice.value },
+        : {
+            ...context,
+            kind: 'species',
+            speciesId: (() => {
+              const selected = branch.value.children.find(item => item.kind === 'animal' && item.id === choice.value)
+              return selected?.kind === 'animal' ? reportedSpeciesId(selected) : choice.value
+            })()
+          },
     props.view.confirmTarget
   )
   completed.value = true
@@ -296,10 +312,7 @@ useFlowDraft({ query, path, choice, description, searchFirst })
       role="status",
       class="px-4 py-3 text-center text-primary"
     ) {{ view.copy.completed }}
-  PageActions.customer-animal-groups__actions(
-    as="div",
-    class="flex shrink-0 flex-col gap-3"
-  )
+  .customer-animal-groups__alternatives(class="flex shrink-0 flex-col gap-3 px-4 pt-4")
     ValidationMessage(
       :messages="validation.formErrors.value",
       summary
@@ -353,6 +366,7 @@ useFlowDraft({ query, path, choice, description, searchFirst })
         :id="validation.errorId('animal')",
         :messages="validation.messages('animal')"
       )
+  PageActions.customer-animal-groups__actions(as="div")
     button(
       type="button",
       class="ui-button min-h-13 w-full rounded-control bg-primary-gradient p-4 text-button text-white disabled:opacity-40",

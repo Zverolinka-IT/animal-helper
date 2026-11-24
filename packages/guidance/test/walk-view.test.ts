@@ -24,7 +24,10 @@ const facts = (patch: Partial<WalkFacts> = {}): WalkFacts => ({
 describe("customer walk view resolver", () => {
   it("resumes from durable facts without a live command response", () => {
     const guidance = bundledPublicGuidance();
-    expect(resumeWalkView(facts(), guidance).screen).toBe("situation");
+    expect(resumeWalkView(facts(), guidance)).toMatchObject({
+      screen: "situation",
+      props: { situations: ["injured", "stray", "cruelty", "other"] },
+    });
     expect(resumeWalkView(facts({ hasDraft: true }), guidance).path).toBe(
       "/w03",
     );

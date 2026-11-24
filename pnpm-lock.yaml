@@ -71,6 +71,15 @@ importers:
       '@animal-helper/guidance':
         specifier: workspace:*
         version: link:../../packages/guidance
+      '@animal-helper/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@animal-helper/jurisdictions':
+        specifier: workspace:*
+        version: link:../../packages/jurisdictions
+      '@animal-helper/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@simplewebauthn/server':
         specifier: 13.2.2
         version: 13.2.2
@@ -87,12 +96,24 @@ importers:
 
   apps/backoffice:
     dependencies:
+      '@animal-helper/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@animal-helper/guidance':
         specifier: workspace:*
         version: link:../../packages/guidance
       '@animal-helper/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@animal-helper/jurisdictions':
+        specifier: workspace:*
+        version: link:../../packages/jurisdictions
+      '@animal-helper/search':
+        specifier: workspace:*
+        version: link:../../packages/search
+      '@fontsource-variable/roboto':
+        specifier: 5.3.0
+        version: 5.3.0
       '@simplewebauthn/browser':
         specifier: 13.2.2
         version: 13.2.2
@@ -102,6 +123,9 @@ importers:
       vue-router:
         specifier: 5.2.0
         version: 5.2.0(@vue/compiler-sfc@3.5.41)(esbuild@0.28.1)(rollup@4.62.3)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(yaml@2.9.0))(vue@3.5.41(typescript@6.0.3))
+      xlsx:
+        specifier: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+        version: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
@@ -121,9 +145,15 @@ importers:
       '@animal-helper/client':
         specifier: workspace:*
         version: link:../../packages/client
+      '@animal-helper/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@animal-helper/guidance':
         specifier: workspace:*
         version: link:../../packages/guidance
+      '@animal-helper/jurisdictions':
+        specifier: workspace:*
+        version: link:../../packages/jurisdictions
       '@floating-ui/vue':
         specifier: 2.0.1
         version: 2.0.1(vue@3.5.41(typescript@6.0.3))
@@ -234,6 +264,14 @@ importers:
         version: link:../contracts
 
   packages/i18n: {}
+
+  packages/jurisdictions:
+    dependencies:
+      '@animal-helper/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+
+  packages/search: {}
 
 packages:
 
@@ -2514,6 +2552,12 @@ packages:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
 
+  xlsx@https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz:
+    resolution: {integrity: sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==, tarball: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz}
+    version: 0.20.3
+    engines: {node: '>=0.8'}
+    hasBin: true
+
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
     engines: {node: '>=18'}
@@ -4661,6 +4705,8 @@ snapshots:
       babel-walk: 3.0.0-canary-5
 
   word-wrap@1.2.5: {}
+
+  xlsx@https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz: {}
 
   xml-name-validator@5.0.0: {}
 

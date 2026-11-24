@@ -21,10 +21,28 @@ beforeEach(() => {
 })
 const global = { stubs: { BaseIcon: true, BaseExpander: { template: '<div><slot /></div>' } } }
 
+it('offers only the general situation while the other branches are paused', () => {
+  expect(otherSituationFixture.choices).toEqual([{ id: 'other', label: 'Iná situácia', target: 'W03' }])
+  const page = mount(PageOtherSituation, { props: { view: otherSituationFixture }, global })
+  expect(page.findAll('button').map(button => button.text())).toEqual(['Späť', 'Iná situácia'])
+})
+
 it('resets stale data on branch change but preserves same-branch answers', async () => {
   previewSession.value!.otherSituation = 'road'
   previewSession.value!.roadDetails = { road: 'near-highway' }
-  const page = mount(PageOtherSituation, { props: { view: otherSituationFixture }, global })
+  const view = {
+    ...otherSituationFixture,
+    choices: [
+      { id: 'road' as const, label: 'Na/pri ceste alebo koľajniciach', target: 'W03' as const },
+      {
+        id: 'human' as const,
+        label: 'Uviazlo alebo ho ohrozuje ľudská činnosť',
+        target: 'W03' as const
+      },
+      ...otherSituationFixture.choices
+    ]
+  }
+  const page = mount(PageOtherSituation, { props: { view }, global })
   await page.findAll('button')[1]!.trigger('click')
   expect(previewSession.value!.roadDetails).toEqual({ road: 'near-highway' })
   await page.findAll('button')[2]!.trigger('click')

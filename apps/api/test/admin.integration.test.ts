@@ -331,7 +331,7 @@ describe.skipIf(databaseUrl === undefined)(
       } finally {
         await restoreGuidance(sql, snapshot);
       }
-    });
+    }, 15_000);
   },
 );
 

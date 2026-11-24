@@ -1,36 +1,63 @@
 <script setup lang="ts">
 import FlowNavigation from '../components/flow-navigation.vue'
 import PageActions from '../components/page-actions.vue'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useNow } from '@vueuse/core'
+import { contactAvailability, slovakDate } from '@animal-helper/jurisdictions'
+import type { InstructionBlock } from './fixtures/instructions'
 import { useRouter } from 'vue-router'
 import HelpText from '../components/help-text.vue'
 import HelpImage from '../components/help-image.vue'
 import { flowActions } from '../flow-client'
+import { flowRoute } from '../flow-route'
 import { backWithinFlow } from '../instruction-navigation'
 import { safeContactHref } from './fixtures/contacts'
+import importantIcon from '@/assets/icons/notice-important.svg'
 import type { InstructionsView, InstructionAction } from './fixtures/instructions'
 const props = defineProps<{ view: InstructionsView }>()
 const router = useRouter()
 const notice = ref('')
+const now = useNow({ interval: 60_000 })
+const blocks = computed(() => {
+  let expired = false
+  const today = slovakDate(now.value)
+  const current: InstructionBlock[] = props.view.blocks.flatMap<InstructionBlock>(block => {
+    if (block.kind !== 'contact') return [block]
+    if (block.reviewDueOn && block.reviewDueOn < today) {
+      expired = true
+      return []
+    }
+    return [{ ...block, ...(block.hours ? { availability: contactAvailability(block.hours, now.value) } : {}) }]
+  })
+  if (expired && !current.some(block => block.kind === 'contact'))
+    current.push({
+      id: 'contacts-awaiting-review',
+      kind: 'notice',
+      emphasis: 'important',
+      title: 'Overený kontakt zatiaľ nie je dostupný',
+      description: 'Kontakty čakajú na nové overenie. Môžete skúsiť ďalšiu možnosť pomoci.'
+    })
+  return current
+})
 watch(
   () => props.view,
   () => {
     notice.value = ''
   }
 )
-const tones = { open: 'text-success', closing: 'text-accent', closed: 'text-danger' }
+const tones = { open: 'text-success', closing: 'text-accent', closed: 'text-danger', unknown: 'text-ink' }
 function goBack() {
   if (!props.view.allowedActions.includes('back')) return
   backWithinFlow(router, props.view.backTarget, flowActions.instructionBackTargets(props.view))
 }
-function act(action: InstructionAction) {
+async function act(action: InstructionAction) {
   if (!props.view.allowedActions.includes(action.id)) return
-  const target = flowActions.instruction(props.view, action)
+  const target = await flowActions.instruction(props.view, action)
   if (!target) {
     notice.value = props.view.copy.unavailable
     return
   }
-  void router.push({ name: target })
+  void router.push(flowRoute(target))
 }
 </script>
 
@@ -38,7 +65,7 @@ function act(action: InstructionAction) {
 .customer-instructions(
   class="flex flex-1 flex-col",
   :lang="view.locale",
-  :class="view.screen === 'W22' ? 'customer-self-help' : 'customer-contacts'"
+  :class="view.screen.startsWith('W22') ? 'customer-self-help' : 'customer-contacts'"
 )
   FlowNavigation(
     :back="view.copy.back",
@@ -47,10 +74,10 @@ function act(action: InstructionAction) {
   )
   header(class="px-5 pt-5 pb-3")
     h1(class="mb-1 text-heading-1") {{ view.copy.title }}
-    p {{ view.copy.description }}
+    p(class="whitespace-pre-line") {{ view.copy.description }}
   .customer-contacts__blocks(class="flex flex-col gap-4 p-4")
     template(
-      v-for="block in view.blocks",
+      v-for="block in blocks",
       :key="block.id"
     )
       section.customer-contact-card(
@@ -65,18 +92,33 @@ function act(action: InstructionAction) {
           ) {{ block.title }}
           span(
             v-if="block.distance",
+            title="Vzdušná vzdialenosť",
             class="shrink-0"
           ) {{ block.distance }}
         div(
           v-if="block.address || block.availability",
           class="flex flex-col gap-4 px-5 py-5"
         )
-          p(v-if="block.address") {{ block.address }}
+          p(
+            v-if="block.address",
+            class="whitespace-pre-line"
+          ) {{ block.address }}
           p(
             v-if="block.availability",
             class="text-body-strong",
             :class="tones[block.availability.tone]"
           ) {{ block.availability.label }}
+        p(
+          v-if="block.note",
+          class="whitespace-pre-line px-5 pb-4"
+        ) {{ block.note }}
+        a(
+          v-if="block.website && safeContactHref(block.website.href, 'web')",
+          :href="safeContactHref(block.website.href, 'web')",
+          target="_blank",
+          rel="noopener noreferrer",
+          class="mx-5 mb-4 inline-flex min-h-11 items-center text-button text-primary underline"
+        ) {{ block.website.label }}
         div(
           v-if="block.phone || block.navigation",
           class="flex items-center justify-between gap-2 border-t border-line px-5 pt-4 pb-5"
@@ -95,7 +137,7 @@ function act(action: InstructionAction) {
             :href="safeContactHref(block.navigation.href, 'web')",
             :disabled="!safeContactHref(block.navigation.href, 'web')",
             :aria-label="block.navigation.label",
-            class="flex size-11 shrink-0 items-center justify-center rounded-control border border-primary text-primary disabled:opacity-40"
+            class="flex size-11 shrink-0 items-center justify-center text-primary disabled:opacity-40"
           )
             base-icon(name="navigation")
       section.customer-contact-notice(
@@ -104,9 +146,19 @@ function act(action: InstructionAction) {
         :class="block.emphasis === 'critical' ? 'bg-warning border-2' : 'bg-warning-light'"
       )
         div(class="mb-2 flex items-center gap-2")
-          base-icon(name="important")
+          img(
+            :src="importantIcon",
+            width="24",
+            height="24",
+            alt="",
+            class="shrink-0"
+          )
           h2(class="text-heading-3") {{ block.title }}
         p {{ block.description }}
+        p(
+          v-if="block.strong",
+          class="font-semibold"
+        ) {{ block.strong }}
       section(v-else-if="block.kind === 'instructions'")
         h2(class="mb-3 text-heading-3 text-primary") {{ block.title }}
         ul(class="list-disc space-y-3 pl-5 marker:text-primary")

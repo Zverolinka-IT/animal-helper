@@ -143,7 +143,7 @@ it('renders supplied labels and groups rather than a built-in catalogue', async 
   expect(wrapper.get('.customer-animal-groups__grid button').attributes('disabled')).toBeDefined()
 })
 
-it('keeps alternatives and confirmation in the footer on every branch', async () => {
+it('keeps alternatives in the page and confirmation available on every branch', async () => {
   beginPreview('injured')
   const wrapper = mount(PageAnimalGroups, {
     props: { view: animalGroupsFixture },
@@ -158,7 +158,7 @@ it('keeps alternatives and confirmation in the footer on every branch', async ()
   const confirmButton = () => wrapper.get('.customer-animal-groups__actions > button')
   expect(confirmButton().text()).toBe('Potvrdiť voľbu')
   expect(confirmButton().attributes('disabled')).toBeDefined()
-  expect(wrapper.findAll('.customer-animal-groups__actions input[type="radio"]')).toHaveLength(2)
+  expect(wrapper.findAll('.customer-animal-groups__alternatives input[type="radio"]')).toHaveLength(2)
   await wrapper.get('input[value="unknown"]').setValue()
   expect(previewSession.value?.animalIdentification).toBeUndefined()
   await click('Potvrdiť voľbu')

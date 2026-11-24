@@ -7,10 +7,12 @@ import {
   fetchLoginOptions,
   fetchQueue,
   fetchRegistrationOptions,
+  fetchReauthenticationOptions,
   fetchSession,
   logoutSession,
   verifyLogin,
   verifyRegistration,
+  verifyReauthentication,
   type Operator,
   type QueueCase,
 } from "./api.js";
@@ -45,6 +47,16 @@ export const signInOperator = async (): Promise<{
   const { options } = await fetchLoginOptions();
   const response = await startAuthentication({ optionsJSON: options });
   const result = await verifyLogin(response);
+  return { operator: result.operator, environment: result.environment };
+};
+
+export const reauthenticateOperator = async (): Promise<{
+  operator: Operator;
+  environment: string;
+}> => {
+  const { options } = await fetchReauthenticationOptions();
+  const response = await startAuthentication({ optionsJSON: options });
+  const result = await verifyReauthentication(response);
   return { operator: result.operator, environment: result.environment };
 };
 

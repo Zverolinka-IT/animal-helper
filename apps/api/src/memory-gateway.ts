@@ -114,6 +114,8 @@ export const createMemoryGateway = (): MemoryGateway => {
       };
     }
 
+    if (input.duplicateOnly === true) return fail("ACTOR_NOT_PERMITTED");
+
     const recorded = eventsByStream.get(input.streamId) ?? [];
     if (recorded.length !== input.expectedVersion) {
       return fail("VERSION_CONFLICT");
@@ -129,14 +131,20 @@ export const createMemoryGateway = (): MemoryGateway => {
     eventsByStream.set(input.streamId, nextEvents);
     const nextState = foldCaseEvents(nextEvents);
     const publicState = toPublicCaseState(nextState.status);
-    const createdAt =
-      publicStatus.get(input.streamId)?.createdAt ?? input.occurredAt;
+    const previous = publicStatus.get(input.streamId);
+    const acceptedAt = new Date(
+      Math.max(
+        input.now.getTime(),
+        new Date(previous?.updatedAt ?? input.now).getTime(),
+      ),
+    ).toISOString();
+    const createdAt = previous?.createdAt ?? acceptedAt;
 
     publicStatus.set(input.streamId, {
       streamId: input.streamId,
       publicState,
       createdAt,
-      updatedAt: input.occurredAt,
+      updatedAt: acceptedAt,
     });
 
     if (

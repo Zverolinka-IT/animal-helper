@@ -2,6 +2,7 @@ import {
   parseApiErrorBody,
   parseCommandAcceptedBody,
   parsePublicCaseStatusBody,
+  parseFormSnapshot,
   type ContactPayloadV1,
   type FormSnapshotV1,
   type LocationPayloadV1,
@@ -34,7 +35,9 @@ import {
   caseAlreadyOpen,
   caseReadOnly,
   invalidResponse,
+  invalidCommand,
   networkFailure,
+  storageUnavailable,
   noOpenCase,
   versionConflict,
   type ClientError,
@@ -42,6 +45,7 @@ import {
 import {
   durabilityOf,
   hydrateStoredCase,
+  withCaseStoreLock,
   type CaseStore,
   type Durability,
   type StoredCase,
@@ -79,7 +83,10 @@ export type CaseSession = Readonly<{
   attachText: (
     payload: TextPayload,
   ) => Promise<Result<CaseSnapshot, ClientError>>;
-  submit: () => Promise<Result<CaseSnapshot, ClientError>>;
+  submit: (
+    contact?: ContactPayloadV1,
+    formSnapshot?: FormSnapshotV1,
+  ) => Promise<Result<CaseSnapshot, ClientError>>;
   flush: () => Promise<Result<CaseSnapshot, ClientError>>;
   refreshStatus: () => Promise<Result<CaseSnapshot, ClientError>>;
   snapshot: () => Promise<CaseSnapshot | undefined>;
@@ -117,6 +124,12 @@ const withoutError = (record: StoredCase): StoredCase => ({
   mutationAllowed: record.mutationAllowed,
   acknowledgedCommandIds: record.acknowledgedCommandIds,
   queue: record.queue,
+  ...(record.submissionContact === undefined
+    ? {}
+    : { submissionContact: record.submissionContact }),
+  ...(record.submissionFormSnapshot === undefined
+    ? {}
+    : { submissionFormSnapshot: record.submissionFormSnapshot }),
   ...(record.lastPublicStatus === undefined
     ? {}
     : { lastPublicStatus: record.lastPublicStatus }),
@@ -148,6 +161,7 @@ const mapApiFailure = (body: unknown): ClientError => {
 };
 
 export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
+  let boundStreamId: string | undefined;
   const clock: CommandClock = {
     now: options.now ?? (() => new Date()),
     createId: options.createId ?? (() => crypto.randomUUID()),
@@ -156,18 +170,39 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
   const load = async (): Promise<
     Result<StoredCase | undefined, ClientError>
   > => {
-    const record = await options.store.load();
+    let record;
+    try {
+      record = await options.store.load();
+    } catch {
+      return err(storageUnavailable);
+    }
     if (record === undefined) {
       return ok(undefined);
     }
 
+    if (boundStreamId !== undefined && boundStreamId !== record.streamId)
+      return err(caseAlreadyOpen);
+    boundStreamId = record.streamId;
+
     return hydrateStoredCase(record);
+  };
+
+  const saveRecord = async (
+    record: StoredCase,
+  ): Promise<Result<void, ClientError>> => {
+    try {
+      await options.store.save(record);
+      return ok(undefined);
+    } catch {
+      return err(storageUnavailable);
+    }
   };
 
   const saveSnapshot = async (
     record: StoredCase,
   ): Promise<Result<CaseSnapshot, ClientError>> => {
-    await options.store.save(record);
+    const saved = await saveRecord(record);
+    if (!saved.ok) return saved;
     return ok(snapshotOf(record));
   };
 
@@ -186,6 +221,7 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       correlationId: string;
       expectedVersion: number;
     }) => Result<TransportCaseCommand, ClientError>,
+    supersedeSubmission = false,
   ): Promise<Result<CaseSnapshot, ClientError>> => {
     const loaded = await requireRecord();
     if (!loaded.ok) {
@@ -197,19 +233,31 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       return err(caseReadOnly);
     }
 
+    const queue = supersedeSubmission
+      ? record.queue.filter((command) => command.type !== "submit_draft")
+      : record.queue;
     const built = build({
       streamId: record.streamId,
       correlationId: record.correlationId,
-      expectedVersion: record.expectedVersion + record.queue.length,
+      expectedVersion: record.expectedVersion + queue.length,
     });
     if (!built.ok) {
       return built;
     }
 
-    return flushRecord({
+    const result = await flushRecord({
       ...withoutError(record),
-      queue: [...record.queue, built.value],
+      queue: [...queue, built.value],
     });
+    if (
+      supersedeSubmission &&
+      !result.ok &&
+      (result.error.code === "API" || result.error.code === "VERSION_CONFLICT")
+    ) {
+      const status = await operations.refreshStatus();
+      if (status.ok && !status.value.mutationAllowed) return err(caseReadOnly);
+    }
+    return result;
   };
 
   const flushRecord = async (
@@ -221,6 +269,11 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       return authorization;
     }
 
+    // Persist the capability and exact command envelope before its first send.
+    // A killed tab must be able to retry a request the server may have accepted.
+    const queued = await saveRecord(current);
+    if (!queued.ok) return queued;
+
     while (current.queue[0] !== undefined) {
       const command = current.queue[0];
       let response;
@@ -231,7 +284,8 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
         });
       } catch {
         const failed = withError(current, networkFailure);
-        await options.store.save(failed);
+        const saved = await saveRecord(failed);
+        if (!saved.ok) return saved;
         return err(networkFailure);
       }
 
@@ -247,7 +301,10 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
             ...current.acknowledgedCommandIds,
             command.commandId,
           ],
-          queue: current.queue.slice(1),
+          queue:
+            accepted.data.value.publicState === "draft"
+              ? current.queue.slice(1)
+              : [],
           lastPublicStatus: {
             streamId: current.streamId,
             publicState: accepted.data.value.publicState,
@@ -256,19 +313,27 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
             updatedAt: command.occurredAt,
           },
         };
+        const saved = await saveRecord(current);
+        if (!saved.ok) return saved;
         continue;
       }
 
       const failure = mapApiFailure(response.body);
-      const failed = withError(current, failure);
-      await options.store.save(failed);
+      const failed = withError(
+        failure.code === "API" && failure.apiCode === "INCOMPLETE_REPORT"
+          ? { ...current, queue: current.queue.slice(1) }
+          : current,
+        failure,
+      );
+      const saved = await saveRecord(failed);
+      if (!saved.ok) return saved;
       return err(failure);
     }
 
     return saveSnapshot(current);
   };
 
-  return {
+  const operations: CaseSession = {
     openDraft: async () => {
       const loaded = await load();
       if (!loaded.ok) {
@@ -280,6 +345,7 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       }
 
       const streamId = clock.createId();
+      boundStreamId = streamId;
       const correlationId = clock.createId();
       const created = buildCreateDraftCommand(
         { streamId, correlationId },
@@ -345,21 +411,118 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
     },
 
     attachFormSnapshot: (payload) =>
-      enqueue((draft) => buildAttachFormSnapshotCommand(draft, payload, clock)),
+      enqueue(
+        (draft) => buildAttachFormSnapshotCommand(draft, payload, clock),
+        true,
+      ),
 
     attachLocation: (payload) =>
-      enqueue((draft) => buildAttachLocationCommand(draft, payload, clock)),
+      enqueue(
+        (draft) => buildAttachLocationCommand(draft, payload, clock),
+        true,
+      ),
 
     attachContact: (payload) =>
-      enqueue((draft) => buildAttachContactCommand(draft, payload, clock)),
+      enqueue(
+        (draft) => buildAttachContactCommand(draft, payload, clock),
+        true,
+      ),
 
     attachMediaRef: (payload) =>
-      enqueue((draft) => buildAttachMediaRefCommand(draft, payload, clock)),
+      enqueue(
+        (draft) => buildAttachMediaRefCommand(draft, payload, clock),
+        true,
+      ),
 
     attachText: (payload) =>
-      enqueue((draft) => buildAttachTextCommand(draft, payload, clock)),
+      enqueue((draft) => buildAttachTextCommand(draft, payload, clock), true),
 
-    submit: () => enqueue((draft) => buildSubmitDraftCommand(draft, clock)),
+    submit: async (contact, formSnapshot) => {
+      if (formSnapshot !== undefined) {
+        const parsed = parseFormSnapshot(formSnapshot);
+        if (!parsed.success) return err(invalidCommand);
+        // Canonical property order and trimmed values keep equivalent retries identical.
+        formSnapshot = parsed.data;
+      }
+      if (contact === undefined && formSnapshot !== undefined)
+        return err(invalidCommand);
+      if (contact === undefined)
+        return enqueue((draft) => buildSubmitDraftCommand(draft, clock));
+      const loaded = await requireRecord();
+      if (!loaded.ok) return loaded;
+      const record = loaded.value;
+      if (!record.mutationAllowed) return err(caseReadOnly);
+
+      const sameContact =
+        record.submissionContact !== undefined &&
+        (
+          [
+            "name",
+            "phone",
+            "email",
+            "shareWithAuthorities",
+            "newsletter",
+          ] as const
+        ).every((key) => record.submissionContact?.[key] === contact[key]);
+      if (
+        sameContact &&
+        JSON.stringify(record.submissionFormSnapshot) ===
+          JSON.stringify(formSnapshot) &&
+        record.queue.some((command) => command.type === "submit_draft")
+      )
+        return flushRecord(record);
+
+      // A changed intent supersedes an unacknowledged submission. The first
+      // attachment competes at that submission's version: it cannot change a report
+      // already accepted, and makes any delayed old submission stale.
+      const queue = record.queue.filter(
+        (command) => command.type !== "submit_draft",
+      );
+      const draft = {
+        streamId: record.streamId,
+        correlationId: record.correlationId,
+        expectedVersion: record.expectedVersion + queue.length,
+      };
+      const form =
+        formSnapshot === undefined
+          ? undefined
+          : buildAttachFormSnapshotCommand(draft, formSnapshot, clock);
+      if (form && !form.ok) return form;
+      const attached = buildAttachContactCommand(
+        { ...draft, expectedVersion: draft.expectedVersion + (form ? 1 : 0) },
+        contact,
+        clock,
+      );
+      if (!attached.ok) return attached;
+      const submitted = buildSubmitDraftCommand(
+        { ...draft, expectedVersion: draft.expectedVersion + (form ? 2 : 1) },
+        clock,
+      );
+      if (!submitted.ok) return submitted;
+      const withoutPreviousForm = { ...withoutError(record) };
+      delete withoutPreviousForm.submissionFormSnapshot;
+      const result = await flushRecord({
+        ...withoutPreviousForm,
+        submissionContact: contact,
+        ...(formSnapshot ? { submissionFormSnapshot: formSnapshot } : {}),
+        queue: [
+          ...queue,
+          ...(form?.ok ? [form.value] : []),
+          attached.value,
+          submitted.value,
+        ],
+      });
+      if (
+        !result.ok &&
+        (result.error.code === "API" ||
+          result.error.code === "VERSION_CONFLICT")
+      ) {
+        const status = await operations.refreshStatus();
+        if (status.ok && !status.value.mutationAllowed)
+          return err(caseReadOnly);
+      }
+      return result;
+    },
 
     flush: async () => {
       const loaded = await requireRecord();
@@ -388,7 +551,8 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
         });
       } catch {
         const failed = withError(loaded.value, networkFailure);
-        await options.store.save(failed);
+        const saved = await saveRecord(failed);
+        if (!saved.ok) return saved;
         return err(networkFailure);
       }
 
@@ -396,13 +560,19 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       if (!status.success) {
         const failure = mapApiFailure(response.body);
         const failed = withError(loaded.value, failure);
-        await options.store.save(failed);
+        const saved = await saveRecord(failed);
+        if (!saved.ok) return saved;
         return err(failure);
       }
 
       return saveSnapshot({
         ...withoutError(loaded.value),
         lastPublicStatus: status.data.value,
+        mutationAllowed:
+          loaded.value.mutationAllowed &&
+          status.data.value.publicState === "draft",
+        queue:
+          status.data.value.publicState === "draft" ? loaded.value.queue : [],
       });
     },
 
@@ -434,6 +604,40 @@ export const createCaseSession = (options: CaseSessionOptions): CaseSession => {
       return capability.ok ? toCapabilityFragment(capability.value) : undefined;
     },
 
-    removeLocal: () => options.store.clear(),
+    removeLocal: async () => {
+      const current = await options.store.load();
+      if (boundStreamId === undefined || current?.streamId === boundStreamId)
+        await options.store.clear();
+      boundStreamId = undefined;
+    },
+  };
+
+  const locked = async (
+    operation: () => Promise<Result<CaseSnapshot, ClientError>>,
+  ) => {
+    try {
+      return await withCaseStoreLock(options.store, operation);
+    } catch {
+      return err(storageUnavailable);
+    }
+  };
+  return {
+    ...operations,
+    openDraft: () => locked(operations.openDraft),
+    importFromFragment: (fragment) =>
+      locked(() => operations.importFromFragment(fragment)),
+    attachFormSnapshot: (payload) =>
+      locked(() => operations.attachFormSnapshot(payload)),
+    attachLocation: (payload) =>
+      locked(() => operations.attachLocation(payload)),
+    attachContact: (payload) => locked(() => operations.attachContact(payload)),
+    attachMediaRef: (payload) =>
+      locked(() => operations.attachMediaRef(payload)),
+    attachText: (payload) => locked(() => operations.attachText(payload)),
+    submit: (contact, formSnapshot) =>
+      locked(() => operations.submit(contact, formSnapshot)),
+    flush: () => locked(operations.flush),
+    refreshStatus: () => locked(operations.refreshStatus),
+    removeLocal: () => withCaseStoreLock(options.store, operations.removeLocal),
   };
 };

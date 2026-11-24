@@ -15,10 +15,45 @@ describe('shared animal search', () => {
   })
 })
 
+it('offers the injured spreadsheet tree and keeps a known animal on its catalogue key', async () => {
+  const { injuredAnimalTree } = await import('../pages/fixtures/injured-animal-tree')
+  const { findAnimalKind } = await import('@animal-helper/guidance')
+  expect(injuredAnimalTree.children.map(node => node.label)).toEqual([
+    'Domáce',
+    'Hospodárske',
+    'Vodné',
+    'Obojživelníky a plazy',
+    'Divožijúce cicavce',
+    'Netopiere',
+    'Vtáky',
+    'Exotické, uniknuté alebo nepôvodné zvieratá'
+  ])
+  const animals = catalogueAnimals(injuredAnimalTree)
+  const cat = animals.find(animal => animal.label === 'Mačka')
+  expect(cat?.id).toBe('domestic_cat')
+  expect(cat?.imageUrl).toBe('/illustrations/A0011.webp')
+  expect(injuredAnimalTree.children.find(node => node.label === 'Domáce')?.imageUrl).toBe('/illustrations/G0001.webp')
+  expect(findAnimalKind('domestic_cat')?.labelSk).toBe('Mačka')
+  expect(
+    animals
+      .filter(animal => animal.label === 'Králik domáci')
+      .map(animal => animal.id)
+      .sort()
+  ).toEqual(['domestic_rabbit', 'farm_rabbit'])
+  const ids = animals.map(animal => animal.id)
+  expect(new Set(ids).size).toBe(ids.length)
+  expect(animals.some(animal => animal.label === 'Daniel škvrnitý')).toBe(true)
+  expect(findAnimalKind('a0036')?.labelSk).toBe('Daniel škvrnitý')
+})
+
 it('includes every shared catalogue identity exactly once with a navigable path', async () => {
   const { animalKinds } = await import('@animal-helper/guidance/catalog')
+  const legacy = animalKinds.filter(
+    kind =>
+      kind.matrix.crueltyId !== undefined || kind.matrix.injuredId !== undefined || kind.matrix.strayId !== undefined
+  )
   const animals = catalogueAnimals(animalGroupsFixture.root)
-  expect(animals.map(animal => animal.id).sort()).toEqual(animalKinds.map(animal => animal.key).sort())
+  expect(animals.map(animal => animal.id).sort()).toEqual(legacy.map(animal => animal.key).sort())
   for (const animal of animals) {
     let parent = animalGroupsFixture.root
     for (const id of animal.path) {

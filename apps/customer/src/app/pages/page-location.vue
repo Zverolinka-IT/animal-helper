@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { flowRoute } from '../flow-route'
 import { useFlowDraft } from '../use-flow-draft'
 import PageActions from '../components/page-actions.vue'
 import PageIntro from '../components/page-intro.vue'
@@ -99,7 +100,7 @@ async function confirmLocation() {
   if (!selected.value || !previewSession.value || !props.view.allowedActions.includes('confirm-location')) return
   const pending = flowActions.location(selected.value, props.view.confirmTarget)
   const target = pending instanceof Promise ? await pending : pending
-  if (target) void router.push({ name: target })
+  if (target) void router.push(flowRoute(target))
 }
 function goBack() {
   if (!props.view.allowedActions.includes('back')) return

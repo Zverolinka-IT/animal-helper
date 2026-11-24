@@ -16,12 +16,14 @@ export type ActorKind = "reporter" | "administrator" | "system";
 export type CaseState = Readonly<{
   status: CaseStatus;
   attachedPrivateRecordIds: readonly string[];
+  attachedPrivateRecordKinds: readonly PrivateRecordKind[];
   privateDataPurged: boolean;
 }>;
 
 export const initialCaseState: CaseState = {
   status: "uninitialized",
   attachedPrivateRecordIds: [],
+  attachedPrivateRecordKinds: [],
   privateDataPurged: false,
 };
 
@@ -93,6 +95,7 @@ export type CaseDomainError = Readonly<{
     | "CASE_NOT_FOUND"
     | "INVALID_TRANSITION"
     | "PRIVATE_RECORD_ALREADY_ATTACHED"
+    | "INCOMPLETE_REPORT"
     | "NOTHING_TO_PURGE";
 }>;
 

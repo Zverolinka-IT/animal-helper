@@ -15,7 +15,16 @@ import {
   GuidanceValidationError,
   type GuidanceCell,
   type GuidanceDocument,
+  contactOptionsForKind,
+  contactOptionCells,
+  isContactInstruction,
+  isContactOptionInstruction,
+  sortOrderForInstruction,
 } from "@animal-helper/guidance";
+import {
+  adminGuidanceContactsSchema,
+  adminReportGuidanceSchema,
+} from "@animal-helper/contracts";
 import {
   GuidanceConflictError,
   insertGuidanceDraft,
@@ -24,6 +33,8 @@ import {
   publishGuidanceDraft,
   recordOperatorAudit,
   saveGuidanceCell,
+  replaceGuidanceContacts,
+  saveReportGuidanceProfiles,
 } from "@animal-helper/event-store";
 import type { Sql } from "postgres";
 
@@ -76,7 +87,7 @@ const replaceCell = (
   document: GuidanceDocument,
   cell: GuidanceCell,
 ): GuidanceDocument => ({
-  copy: document.copy,
+  ...document,
   cells: [
     ...document.cells.filter(
       (existing) =>
@@ -103,6 +114,9 @@ const toStoredCell = (cell: GuidanceCell) => ({
   ...(cell.actionTargetKey === undefined
     ? {}
     : { actionTargetKey: cell.actionTargetKey }),
+  ...(cell.clinicVariant === undefined
+    ? {}
+    : { clinicVariant: cell.clinicVariant }),
 });
 
 const ensureDraft = async (sql: Sql, actorEmail: string, now: Date) => {
@@ -226,6 +240,7 @@ export const adminGuidanceKind = async (
     kindKey,
     cells: editorCells(current.document, kindKey),
     items: resolveKindItems(kindKey, current.document),
+    contactOptions: contactOptionsForKind(current.document, kindKey),
   });
 };
 
@@ -267,7 +282,7 @@ const parseCellBody = (
           instructionKey,
           applicability,
           sortOrder:
-            existing?.sortOrder ?? instructionSortOrder[instructionKey],
+            existing?.sortOrder ?? sortOrderForInstruction(instructionKey),
           copy: isRecord(body.copy) ? body.copy : {},
           ...(actionTargetKey === undefined ? {} : { actionTargetKey }),
         },
@@ -319,6 +334,17 @@ const saveGuidanceCellUnchecked = async (
     throw new GuidanceAdminError("conflict", 409);
   }
   const cell = parseCellBody(body, draft.document);
+  if (
+    isContactInstruction(cell.instructionKey) &&
+    (isContactOptionInstruction(cell.instructionKey) ||
+      draft.document.cells.some(
+        (entry) =>
+          entry.kindKey === cell.kindKey &&
+          isContactOptionInstruction(entry.instructionKey),
+      ))
+  ) {
+    throw new GuidanceAdminError("invalid_content", 400);
+  }
   const nextDocument = replaceCell(draft.document, cell);
   parseGuidanceDocument(nextDocument);
   const nextHash = hashGuidanceDocument(nextDocument);
@@ -349,6 +375,70 @@ const saveGuidanceCellUnchecked = async (
     kindKey: cell.kindKey,
     cells: editorCells(nextDocument, cell.kindKey),
     items: resolveKindItems(cell.kindKey, nextDocument),
+    contactOptions: contactOptionsForKind(nextDocument, cell.kindKey),
+  });
+};
+
+export const adminSaveGuidanceContacts = async (
+  sql: Sql,
+  body: unknown,
+  actorEmail: string,
+  now: Date,
+): Promise<ApiResponse> => {
+  const parsed = adminGuidanceContactsSchema.safeParse(body);
+  if (
+    !parsed.success ||
+    findAnimalKind(parsed.data.kindKey)?.injured === undefined
+  ) {
+    throw new GuidanceAdminError("invalid_content", 400);
+  }
+  const { expectedHash, kindKey, options } = parsed.data;
+  const draft = await ensureDraft(sql, actorEmail, now);
+  if (draft.contentHash !== expectedHash)
+    throw new GuidanceAdminError("conflict", 409);
+  const cells = contactOptionCells(kindKey, options);
+  let nextDocument: GuidanceDocument;
+  try {
+    nextDocument = parseGuidanceDocument({
+      ...draft.document,
+      cells: [
+        ...draft.document.cells.filter(
+          (cell) =>
+            cell.kindKey !== kindKey ||
+            !isContactInstruction(cell.instructionKey),
+        ),
+        ...cells,
+      ],
+    });
+  } catch (error) {
+    if (error instanceof GuidanceValidationError)
+      throw new GuidanceAdminError("invalid_content", 400);
+    throw error;
+  }
+  const nextHash = hashGuidanceDocument(nextDocument);
+  try {
+    await replaceGuidanceContacts(sql, {
+      revisionId: draft.revisionId,
+      expectedHash,
+      nextHash,
+      kindKey,
+      cells: cells.map(toStoredCell),
+      actorEmail,
+      now,
+    });
+  } catch (error) {
+    if (error instanceof GuidanceConflictError)
+      throw new GuidanceAdminError("conflict", 409);
+    throw error;
+  }
+  return json(200, {
+    source: "draft",
+    revisionId: draft.revisionId,
+    contentHash: nextHash,
+    kindKey,
+    cells: editorCells(nextDocument, kindKey),
+    items: resolveKindItems(kindKey, nextDocument),
+    contactOptions: contactOptionsForKind(nextDocument, kindKey),
   });
 };
 
@@ -415,5 +505,66 @@ export const adminPublishGuidance = async (
     contentHash: published.contentHash,
     publishedAt: published.publishedAt?.toISOString(),
     description: published.description,
+  });
+};
+
+export const adminReportGuidance = async (sql: Sql): Promise<ApiResponse> => {
+  const current = await editableGuidance(sql);
+  return json(200, {
+    contentHash: current.contentHash,
+    source: current.source,
+    profiles: current.document.reportProfiles ?? [],
+  });
+};
+
+export const adminSaveReportGuidance = async (
+  sql: Sql,
+  body: unknown,
+  actorEmail: string,
+  now: Date,
+): Promise<ApiResponse> => {
+  const parsed = adminReportGuidanceSchema.safeParse(body);
+  if (!parsed.success) throw new GuidanceAdminError("invalid_content", 400);
+  const draft = await ensureDraft(sql, actorEmail, now);
+  if (draft.contentHash !== parsed.data.expectedHash)
+    throw new GuidanceAdminError("conflict", 409);
+  const profile = parsed.data.profile;
+  let document: GuidanceDocument;
+  try {
+    document = parseGuidanceDocument({
+      ...draft.document,
+      reportProfiles: [
+        ...(draft.document.reportProfiles ?? []).filter(
+          (entry) =>
+            entry.context !== profile.context ||
+            entry.kindKey !== profile.kindKey,
+        ),
+        profile,
+      ],
+    });
+  } catch (error) {
+    if (error instanceof GuidanceValidationError)
+      throw new GuidanceAdminError("invalid_content", 400);
+    throw error;
+  }
+  const nextHash = hashGuidanceDocument(document);
+  try {
+    await saveReportGuidanceProfiles(sql, {
+      revisionId: draft.revisionId,
+      expectedHash: parsed.data.expectedHash,
+      nextHash,
+      profiles: document.reportProfiles ?? [],
+      actorEmail,
+      now,
+    });
+  } catch (error) {
+    if (error instanceof GuidanceConflictError)
+      throw new GuidanceAdminError("conflict", 409);
+    throw error;
+  }
+  return json(200, {
+    source: "draft",
+    contentHash: nextHash,
+    profiles: document.reportProfiles ?? [],
   });
 };

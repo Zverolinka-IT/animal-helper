@@ -43,3 +43,12 @@ export {
   type CaseEventPayload,
   type RecordedCaseEvent,
 } from "./case/recorded.js";
+
+export {
+  applyAdminCommand,
+  initialAdminDocument,
+  type AdminCaseDocument,
+  type AdminCommand,
+  type AdminMode,
+  type AdminUrgency,
+} from "./case/admin-work.js";

@@ -1,5 +1,4 @@
 import {
-  hasAvailablePrivateData,
   type CaseDomainEvent,
   type CaseState,
   type OutboxEffect,
@@ -20,7 +19,7 @@ export const effectsFromTransition = (
         effects.push({ type: "notify_case_queued" });
         break;
       case "case_completed":
-        if (hasAvailablePrivateData(nextState)) {
+        if (!nextState.privateDataPurged) {
           effects.push({ type: "schedule_private_data_purge" });
         }
         break;

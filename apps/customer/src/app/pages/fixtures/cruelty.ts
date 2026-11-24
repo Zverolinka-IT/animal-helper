@@ -58,6 +58,54 @@ export const crueltyFixture: CrueltyView = {
 // Documenting cruelty ends at acknowledgement, not a second round of advice.
 export const crueltyDetailsFixture: AnimalDetailsView = {
   ...animalDetailsFixture,
+  screen: 'W11',
   confirmTarget: 'W39',
-  copy: { ...animalDetailsFixture.copy, confirm: 'Potvrdiť údaje' }
+  copy: {
+    ...animalDetailsFixture.copy,
+    step: 'Krok 3 z 3',
+    progress: 100,
+    description: 'Skontrolujte druh zvieraťa a doplňte detaily o jeho stave.',
+    confirm: 'Potvrdiť'
+  },
+  questions: [
+    {
+      id: 'cruelty',
+      label: 'Čo je zvieraťu?',
+      kind: 'multiple',
+      required: false,
+      options: [
+        { id: 'chained', label: 'Uviazané na reťazi' },
+        { id: 'conditions', label: 'Zlé podmienky' },
+        { id: 'underfed', label: 'Podvyživené zviera' },
+        { id: 'beaten', label: 'Bité zviera' },
+        { id: 'no-water', label: 'Nedostáva vodu' },
+        { id: 'unknown', label: 'Neviem', exclusive: true }
+      ]
+    },
+    {
+      id: 'description',
+      label: 'Vlastný opis situácie',
+      kind: 'text',
+      required: false,
+      options: [],
+      placeholder: 'Stručne opíšte, čo sa práve deje.'
+    }
+  ]
+}
+
+// Figma 1594:12039: urgency determines the documented circumstances, not a second help tree.
+export const acuteCrueltyDetailsFixture: AnimalDetailsView = {
+  ...crueltyDetailsFixture,
+  questions: [
+    {
+      ...crueltyDetailsFixture.questions[0]!,
+      options: [
+        { id: 'burned', label: 'Zapaľované zviera' },
+        { id: 'beaten', label: 'Bité zviera' },
+        { id: 'poisoned', label: 'Podávané toxické látky' },
+        { id: 'unknown', label: 'Neviem', exclusive: true }
+      ]
+    },
+    crueltyDetailsFixture.questions[1]!
+  ]
 }

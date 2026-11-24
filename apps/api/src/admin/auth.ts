@@ -13,6 +13,7 @@ import {
   finishOperatorAuthentication,
   finishOperatorRegistration,
   hashOpaqueToken,
+  hashesEqual,
   insertOperatorChallenge,
   listEnabledOperatorPasskeys,
   listOperatorPasskeys,
@@ -29,7 +30,7 @@ import {
 import type { AdminConfig } from "./config.js";
 
 export type AdminAuthResult = Readonly<{
-  operator: { id: string; email: string };
+  operator: { id: string; email: string; canManageOperators: boolean };
   expiresAt: string;
   sessionToken: string;
 }>;
@@ -102,8 +103,18 @@ export const createAuthenticationOptions = async (
   sql: Sql,
   config: AdminConfig,
   now: Date,
+  sessionToken?: string,
 ): Promise<CeremonyResult> => {
-  const existing = await listEnabledOperatorPasskeys(sql);
+  const session =
+    sessionToken === undefined
+      ? undefined
+      : await lookupOperatorSession(sql, hashOpaqueToken(sessionToken), now);
+  if (sessionToken !== undefined && session === undefined)
+    throw new OperatorAuthError("passkey_failed");
+  const existing =
+    session === undefined
+      ? await listEnabledOperatorPasskeys(sql)
+      : await listOperatorPasskeys(sql, session.operatorId);
   if (existing.length === 0) {
     throw new OperatorAuthError("passkey_unregistered");
   }
@@ -122,6 +133,9 @@ export const createAuthenticationOptions = async (
     challenge: options.challenge,
     operatorId: null,
     bootstrapHash: null,
+    ...(sessionToken === undefined
+      ? {}
+      : { sessionTokenHash: hashOpaqueToken(sessionToken) }),
     expiresAt: new Date(now.getTime() + config.challengeSeconds * 1000),
   });
   return { options, ceremonyToken };
@@ -191,6 +205,7 @@ export const completeAuthentication = async (
   ceremonyToken: string,
   response: unknown,
   now: Date,
+  reauthSessionToken?: string,
 ): Promise<AdminAuthResult> => {
   const challenge = await takeOperatorChallenge(
     sql,
@@ -202,8 +217,34 @@ export const completeAuthentication = async (
     throw new OperatorAuthError("passkey_failed");
   }
 
+  const previousHash =
+    reauthSessionToken === undefined
+      ? undefined
+      : hashOpaqueToken(reauthSessionToken);
+  if (
+    challenge.sessionTokenHash === null
+      ? previousHash !== undefined
+      : previousHash === undefined ||
+        !hashesEqual(challenge.sessionTokenHash, previousHash)
+  ) {
+    throw new OperatorAuthError("passkey_failed");
+  }
+  const previousSession =
+    previousHash === undefined
+      ? undefined
+      : await lookupOperatorSession(sql, previousHash, now);
+  if (previousHash !== undefined && previousSession === undefined)
+    throw new OperatorAuthError("passkey_failed");
+
   const assertion = response as AuthenticationResponseJSON;
-  const expectedOperatorId = readUserHandle(assertion.response.userHandle);
+  const userHandle = readUserHandle(assertion.response.userHandle);
+  if (
+    previousSession !== undefined &&
+    userHandle !== undefined &&
+    userHandle !== previousSession.operatorId
+  )
+    throw new OperatorAuthError("passkey_failed");
+  const expectedOperatorId = previousSession?.operatorId ?? userHandle;
 
   const sessionToken = newOpaqueToken();
   try {
@@ -235,10 +276,16 @@ export const completeAuthentication = async (
       sessionTokenHash: hashOpaqueToken(sessionToken),
       now,
       sessionExpiresAt: new Date(now.getTime() + config.sessionSeconds * 1000),
+      ...(previousHash === undefined
+        ? {}
+        : { previousSessionTokenHash: previousHash }),
     });
     await recordOperatorAudit(sql, {
       operatorEmail: operator.email,
-      action: "operator_signed_in",
+      action:
+        previousSession === undefined
+          ? "operator_signed_in"
+          : "operator_reauthenticated",
       outcome: "accepted",
     });
     return toAuthResult(operator, sessionToken, config, now);
@@ -290,7 +337,11 @@ const toAuthResult = (
   config: AdminConfig,
   now: Date,
 ): AdminAuthResult => ({
-  operator: { id: operator.operatorId, email: operator.email },
+  operator: {
+    id: operator.operatorId,
+    email: operator.email,
+    canManageOperators: operator.canManageOperators,
+  },
   expiresAt: new Date(
     now.getTime() + config.sessionSeconds * 1000,
   ).toISOString(),

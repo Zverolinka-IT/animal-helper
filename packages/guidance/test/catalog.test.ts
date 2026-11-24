@@ -14,8 +14,8 @@ import { readMatrixRows } from "./read-matrices.js";
 
 describe("animal-kind catalog", () => {
   it("keeps unique catalog keys and the existing domestic_cat identity", () => {
-    expect(animalKindCount).toBe(116);
-    expect(new Set(animalKinds.map((kind) => kind.key)).size).toBe(116);
+    expect(animalKindCount).toBe(200);
+    expect(new Set(animalKinds.map((kind) => kind.key)).size).toBe(200);
     expect(animalKindByKey("domestic_cat")).toMatchObject({
       key: "domestic_cat",
       groupKey: "domestic",

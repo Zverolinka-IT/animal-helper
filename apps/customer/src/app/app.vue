@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { flowRoute } from './flow-route'
 import { usePreferredReducedMotion, useScrollLock, useElementSize } from '@vueuse/core'
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 import { nextTick, onMounted, onUnmounted, provide, ref } from 'vue'
@@ -31,6 +32,10 @@ const exitDialog = ref<InstanceType<typeof FlowExitDialog>>()
 provide(requestFlowExit, opener => exitDialog.value?.open(opener))
 const draftCaptures = new Set<() => Record<string, unknown>>()
 provide(flowDraftContext, {
+  writer: () => {
+    const screen = String(route.name)
+    return values => flowActions.saveUiDraft(screen, values)
+  },
   restore: () => flowActions.readDraft(String(route.name)),
   register: capture => {
     draftCaptures.add(capture)
@@ -38,13 +43,14 @@ provide(flowDraftContext, {
   }
 })
 async function leaveFlow() {
-  const screen = String(route.name)
+  const screen = route.name === 'contact-option' ? route.path : String(route.name)
   const target = flowActions.leave(screen)
   for (const capture of draftCaptures) flowActions.saveDraft(screen, capture())
-  if (target) await router.push({ name: target })
+  if (target) await router.push(flowRoute(target))
 }
 let pendingPageFocus = false
 const stopNavigationFocus = router.afterEach((to, from, failure) => {
+  if (!failure) void flowActions.rememberGuidePath(to.path)
   if (failure || !from.matched.length || to.path === from.path) return
   if (to.matched.at(-1)?.components?.default === from.matched.at(-1)?.components?.default) {
     const previousControl = document.activeElement
@@ -100,7 +106,7 @@ async function handlePageAction(id: string) {
   if (route.name !== 'W01') return
   const pending = flowActions.start(homeView.value, id)
   const target = pending instanceof Promise ? await pending : pending
-  if (target) await router.push({ name: target })
+  if (target) await router.push(flowRoute(target))
 }
 const reducedMotion = usePreferredReducedMotion()
 const starting = ref(true)
@@ -224,7 +230,7 @@ onUnmounted(() => {
             height="40",
             class="h-10 w-[62px]"
           )
-        button(
+        button.customer-app__advice-trigger(
           v-if="pageAdvice",
           type="button",
           aria-haspopup="dialog",

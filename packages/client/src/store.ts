@@ -1,8 +1,12 @@
 import {
   parseCaseCommand,
+  contactPayloadV1Schema,
+  formSnapshotV1Schema,
+  type FormSnapshotV1,
   publicCaseStatusSchema,
   type PublicCaseStatus,
   type TransportCaseCommand,
+  type ContactPayloadV1,
 } from "@animal-helper/contracts";
 import { err, ok, type Result } from "@animal-helper/domain";
 
@@ -31,13 +35,36 @@ export type StoredCase = Readonly<{
   queue: readonly TransportCaseCommand[];
   lastPublicStatus?: PublicCaseStatus;
   lastError?: ClientError;
+  submissionContact?: ContactPayloadV1;
+  submissionFormSnapshot?: FormSnapshotV1;
 }>;
 
 export type CaseStore = Readonly<{
   load: () => Promise<StoredCase | undefined>;
   save: (record: StoredCase) => Promise<void>;
   clear: () => Promise<void>;
+  exclusive?: <T>(operation: () => Promise<T>) => Promise<T>;
 }>;
+
+const storeTails = new WeakMap<CaseStore, Promise<void>>();
+
+// Custom stores can supply a lock shared by every instance of their backend.
+// Otherwise, sessions sharing this store object are serialized in this realm.
+export const withCaseStoreLock = <T>(
+  store: CaseStore,
+  operation: () => Promise<T>,
+): Promise<T> => {
+  if (store.exclusive) return store.exclusive(operation);
+  const pending = (storeTails.get(store) ?? Promise.resolve()).then(operation);
+  storeTails.set(
+    store,
+    pending.then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
+  return pending;
+};
 
 export const createMemoryCaseStore = (initial?: StoredCase): CaseStore => {
   let record = initial;
@@ -61,6 +88,18 @@ export const hydrateStoredCase = (
   if (!decodeCapability(record.capabilityToken).ok) {
     return err(invalidCapability);
   }
+
+  if (
+    record.submissionContact !== undefined &&
+    !contactPayloadV1Schema.safeParse(record.submissionContact).success
+  )
+    return err(invalidCommand);
+
+  if (
+    record.submissionFormSnapshot !== undefined &&
+    !formSnapshotV1Schema.safeParse(record.submissionFormSnapshot).success
+  )
+    return err(invalidCommand);
 
   if (
     record.lastPublicStatus !== undefined &&

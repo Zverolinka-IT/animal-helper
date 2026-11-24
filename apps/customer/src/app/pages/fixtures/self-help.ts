@@ -13,11 +13,11 @@ export type SelfHelpBlock =
   | { id: string; kind: 'divider' }
   | { id: string; kind: 'images'; title?: string; items: HelpImage[] }
 export type SelfHelpView = Omit<InstructionsView, 'screen' | 'blocks' | 'footerActions' | 'allowedActions'> & {
-  screen: 'W22'
+  screen: 'W22' | 'W22a' | 'W22b' | 'W22d'
   blocks: SelfHelpBlock[]
   allowedActions: ('back' | 'resolved' | 'unresolved')[]
   footerActions: (
-    | { id: 'resolved'; label: string; appearance: 'primary' | 'secondary'; target: 'W24' }
+    | { id: 'resolved'; label: string; appearance: 'primary' | 'secondary'; target: 'W24' | 'W39a' }
     | { id: 'unresolved'; label: string; appearance: 'primary' | 'secondary'; target: 'W25' }
   )[]
 }

@@ -6,6 +6,8 @@ import { captureBootstrapToken, pendingBootstrapToken } from "./bootstrap.js";
 import { router } from "./router.js";
 import { rememberOperator } from "./runtime.js";
 import { restoreOperatorSession } from "./session.js";
+import "@fontsource-variable/roboto/wght.css";
+import "./style.css";
 
 document.title = t("backoffice.appName");
 

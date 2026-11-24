@@ -1,3 +1,4 @@
+import type { ContactDirectoryEntry } from '@animal-helper/contracts'
 import { adviceFixture } from './advice'
 import type { InstructionsView } from './instructions'
 // Working presentation contract, not a live directory or a recommendation engine.
@@ -9,11 +10,22 @@ export type ContactBlock =
       title: string
       distance?: string
       address?: string
-      availability?: { label: string; tone: 'open' | 'closing' | 'closed' }
+      availability?: { label: string; tone: 'open' | 'closing' | 'closed' | 'unknown' }
       phone?: ContactLink
       navigation?: ContactLink
+      website?: ContactLink
+      note?: string
+      hours?: ContactDirectoryEntry['hours']
+      reviewDueOn?: string
     }
-  | { id: string; kind: 'notice'; emphasis: 'important' | 'critical'; title: string; description: string }
+  | {
+      id: string
+      kind: 'notice'
+      emphasis: 'important' | 'critical'
+      title: string
+      description: string
+      strong?: string
+    }
   | { id: string; kind: 'instructions'; title: string; items: { id: string; text: string }[] }
   | { id: string; kind: 'link'; description: string; link: ContactLink }
 export type ContactsView = Omit<InstructionsView, 'screen' | 'blocks' | 'footerActions' | 'allowedActions'> & {
@@ -21,8 +33,8 @@ export type ContactsView = Omit<InstructionsView, 'screen' | 'blocks' | 'footerA
   blocks: ContactBlock[]
   allowedActions: ('back' | 'resolved' | 'alternatives')[]
   footerActions: (
-    | { id: 'resolved'; label: string; appearance: 'primary' | 'secondary'; target: 'W24' }
-    | { id: 'alternatives'; label: string; appearance: 'primary' | 'secondary'; target: 'W22' }
+    | { id: 'resolved'; label: string; appearance: 'primary' | 'secondary'; target: 'W24' | 'W39a' }
+    | { id: 'alternatives'; label: string; appearance: 'primary' | 'secondary'; target: 'W15' | 'W22' }
   )[]
 }
 export const municipalityFixture: ContactsView = {
@@ -48,7 +60,8 @@ export const municipalityFixture: ContactsView = {
   copy: {
     back: 'Späť',
     title: 'Kontaktujte mesto alebo obec',
-    description: 'Tu sa zobrazí postup a kontakt na mesto alebo obec podľa údajov zo servera.',
+    description:
+      'Obec má zo zákona povinnosť zabezpečiť odchyt túlavých zvierat a ich umiestnenie do útulku, a to aj v prípade, ak sú zranené. Obci oznámte, kde sa zviera nachádza a v akom je stave.',
     preview: 'Lokálna ukážka kontaktov. Údaje nie sú skutočné; volanie ani navigácia nie sú zapojené.',
     unavailable: 'Ďalší postup zatiaľ nie je zapojený. Žiadne hlásenie sa neodoslalo.'
   },
@@ -61,6 +74,14 @@ export const municipalityFixture: ContactsView = {
       address: 'Ukážková adresa obce',
       availability: { label: 'Otvorené 8:00–16:00', tone: 'open' },
       phone: { label: 'Telefón doplní server' }
+    },
+    {
+      id: 'duty',
+      kind: 'notice',
+      emphasis: 'critical',
+      title: 'Dôležité!',
+      description: 'Útulky a dobrovoľníci sú na hranici svojich možností a nemôžu nahrádzať povinnosti obcí.',
+      strong: 'Iné možnosti pomoci využite, až keď ste sa opakovane pokúsili získať pomoc od obce, no neuspeli ste.'
     }
   ]
 }
@@ -70,7 +91,7 @@ export const clinicFixture: ContactsView = {
   copy: {
     ...municipalityFixture.copy,
     title: 'Môžete kontaktovať veterinárnu kliniku',
-    description: 'Zoznam kontaktov a ich dostupnosť dodá server.'
+    description: 'Vybrali sme najbližšie veterinárne kliniky vo vašom okolí, ktoré majú momentálne otvorené.'
   },
   blocks: [
     {
@@ -78,7 +99,8 @@ export const clinicFixture: ContactsView = {
       kind: 'notice',
       emphasis: 'important',
       title: 'Pozor, nebude to bezplatné',
-      description: 'Ukážka upozornenia na možné náklady. Podmienky konkrétnej pomoci doplní server.'
+      description:
+        'Ak si objednáte ošetrenie veterinára, náklady budete musieť uhradiť vy, pokiaľ sa vopred nedohodnete inak. Niektoré veterinárne pracoviská poskytujú aj pohotovosť a výjazdy. Vopred si telefonicky overte ich dostupnosť a prípadné príplatky. Spoluprácu s klinikami ešte pripravujeme. Zatiaľ vám zobrazujeme najbližšie veterinárne pracoviská.'
     },
     ...(['open', 'closing', 'closed'] as const).map((tone, index): ContactBlock => ({
       id: 'clinic-' + index,
@@ -179,7 +201,24 @@ export const contactsShowcaseFixture: ContactsView = {
     view.blocks.map(block => ({ ...block, id: `${view.screen}-${block.id}` }))
   )
 }
-export const contactFixtures = [contactsShowcaseFixture, clinicFixture, policeFixture, volunteersFixture, patrolFixture]
+export const secondaryContactFixture: ContactsView = {
+  ...clinicFixture,
+  screen: 'W19',
+  copy: {
+    ...clinicFixture.copy,
+    title: 'Kontaktujte veterinárnu kliniku',
+    description: 'Chránených živočíchov prevezmú bezplatne.'
+  },
+  blocks: clinicFixture.blocks.filter(block => block.kind !== 'notice')
+}
+export const contactFixtures = [
+  contactsShowcaseFixture,
+  clinicFixture,
+  secondaryContactFixture,
+  policeFixture,
+  volunteersFixture,
+  patrolFixture
+]
 
 export function safeContactHref(href: string | undefined, type: 'phone' | 'web'): string | undefined {
   if (!href) return undefined

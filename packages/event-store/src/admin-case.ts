@@ -1,103 +1,21 @@
 import type { Sql } from "postgres";
-
-export type AdminMode = "passive" | "review" | "active" | "closed";
-export type AdminUrgency = "acute" | "high" | "normal";
-
-export type AdminAction = Readonly<{
-  id: string;
-  kind: string;
-  at: string;
-  by: string;
-  result: string;
-}>;
-
-export type AdminStep = Readonly<{
-  id: string;
-  text: string;
-  due: string;
-  done: boolean;
-}>;
-
-export type AdminVolunteer = Readonly<{
-  name: string;
-  task: string;
-  result: string;
-}>;
-
-export type AdminInspection = Readonly<{
-  id: string;
-  on: string;
-  by: string;
-  outcome: string;
-  findings: string;
-}>;
-
-export type AdminReferral = Readonly<{
-  id: string;
-  recipient: string;
-  sentOn: string;
-  replyFileName: string;
-  inspections: readonly AdminInspection[];
-}>;
-
-export type AdminCaseDocument = Readonly<{
-  mode: AdminMode;
-  urgency: AdminUrgency;
-  ownerEmail: string;
-  nextStep: string;
-  deadline: string;
-  note: string;
-  seenBy: Readonly<Record<string, string>>;
-  volunteer?: AdminVolunteer;
-  actions: readonly AdminAction[];
-  referrals: readonly AdminReferral[];
-  steps: readonly AdminStep[];
-}>;
-
-export type AdminCommand =
-  | Readonly<{ type: "seen"; at: string; email: string }>
-  | Readonly<{ type: "take_over"; at: string; email: string }>
-  | Readonly<{ type: "leave_passive" }>
-  | Readonly<{ type: "close" }>
-  | Readonly<{
-      type: "set_work";
-      urgency: AdminUrgency;
-      nextStep: string;
-      deadline: string;
-      note: string;
-    }>
-  | Readonly<{
-      type: "add_action";
-      id: string;
-      at: string;
-      email: string;
-      kind: string;
-      result: string;
-    }>
-  | Readonly<{ type: "add_step"; id: string; text: string; due: string }>
-  | Readonly<{ type: "remove_step"; id: string }>
-  | Readonly<{
-      type: "add_volunteer";
-      name: string;
-      task: string;
-      result: string;
-    }>
-  | Readonly<{
-      type: "add_referral";
-      id: string;
-      recipient: string;
-      sentOn: string;
-      replyFileName: string;
-    }>
-  | Readonly<{
-      type: "add_inspection";
-      id: string;
-      referralId: string;
-      on: string;
-      by: string;
-      outcome: string;
-      findings: string;
-    }>;
+import {
+  parseFormSnapshot,
+  type FormSnapshotV1,
+  type ReportOutcome,
+} from "@animal-helper/contracts";
+import {
+  initialAdminDocument,
+  type AdminCaseDocument,
+} from "@animal-helper/domain";
+export {
+  applyAdminCommand,
+  initialAdminDocument,
+  type AdminCaseDocument,
+  type AdminCommand,
+  type AdminMode,
+  type AdminUrgency,
+} from "@animal-helper/domain";
 
 export type AppCaseFacts = Readonly<{
   situationType: string;
@@ -107,6 +25,12 @@ export type AppCaseFacts = Readonly<{
   longitude?: number;
   symptoms: readonly string[];
   description: string;
+  condition?: FormSnapshotV1["condition"];
+  report?: Pick<
+    FormSnapshotV1,
+    "dead" | "cruelty" | "other" | "closure" | "species"
+  >;
+  outcome?: ReportOutcome;
   reporterName: string;
   reporterPhone: string;
   reporterEmail: string;
@@ -137,25 +61,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const text = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
-
-export const initialAdminDocument = (
-  situationType: string,
-): AdminCaseDocument => ({
-  mode:
-    situationType === "cruelty" || situationType === "dead"
-      ? "active"
-      : "passive",
-  urgency:
-    situationType === "cruelty" || situationType === "dead" ? "high" : "normal",
-  ownerEmail: "",
-  nextStep: "",
-  deadline: "",
-  note: "",
-  seenBy: {},
-  actions: [],
-  referrals: [],
-  steps: [],
-});
 
 export const parseAdminDocument = (
   value: unknown,
@@ -265,200 +170,6 @@ export const parseAdminDocument = (
   };
 };
 
-const activeOnly = (
-  document: AdminCaseDocument,
-): { ok: false; code: "not_allowed" } | undefined =>
-  document.mode === "active" ? undefined : { ok: false, code: "not_allowed" };
-
-export const applyAdminCommand = (
-  document: AdminCaseDocument,
-  command: AdminCommand,
-):
-  | Readonly<{ ok: true; document: AdminCaseDocument }>
-  | Readonly<{ ok: false; code: "not_allowed" | "invalid" }> => {
-  switch (command.type) {
-    case "seen":
-      return {
-        ok: true,
-        document: {
-          ...document,
-          seenBy: { ...document.seenBy, [command.email]: command.at },
-        },
-      };
-    case "take_over":
-      if (document.mode !== "passive" && document.mode !== "review") {
-        return { ok: false, code: "not_allowed" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          mode: "active",
-          ownerEmail: document.ownerEmail || command.email,
-        },
-      };
-    case "leave_passive":
-      if (document.mode !== "review") {
-        return { ok: false, code: "not_allowed" };
-      }
-      return { ok: true, document: { ...document, mode: "passive" } };
-    case "close":
-      if (document.mode !== "active") {
-        return { ok: false, code: "not_allowed" };
-      }
-      return { ok: true, document: { ...document, mode: "closed" } };
-    case "set_work": {
-      const blocked = activeOnly(document);
-      if (blocked) {
-        return blocked;
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          urgency: command.urgency,
-          nextStep: command.nextStep.slice(0, 500),
-          deadline: command.deadline,
-          note: command.note.slice(0, 4000),
-          ownerEmail: document.ownerEmail,
-        },
-      };
-    }
-    case "add_action": {
-      const blocked = activeOnly(document);
-      if (
-        blocked ||
-        command.kind.trim() === "" ||
-        command.result.trim() === ""
-      ) {
-        return blocked ?? { ok: false, code: "invalid" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          ownerEmail: document.ownerEmail || command.email,
-          actions: [
-            ...document.actions,
-            {
-              id: command.id,
-              kind: command.kind.trim().slice(0, 80),
-              at: command.at,
-              by: command.email,
-              result: command.result.trim().slice(0, 2000),
-            },
-          ],
-        },
-      };
-    }
-    case "add_step": {
-      const blocked = activeOnly(document);
-      if (blocked || command.text.trim() === "") {
-        return blocked ?? { ok: false, code: "invalid" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          steps: [
-            ...document.steps,
-            {
-              id: command.id,
-              text: command.text.trim().slice(0, 500),
-              due: command.due,
-              done: false,
-            },
-          ],
-        },
-      };
-    }
-    case "remove_step": {
-      const blocked = activeOnly(document);
-      if (blocked) {
-        return blocked;
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          steps: document.steps.filter((step) => step.id !== command.id),
-        },
-      };
-    }
-    case "add_volunteer": {
-      const blocked = activeOnly(document);
-      if (blocked || command.name.trim() === "") {
-        return blocked ?? { ok: false, code: "invalid" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          volunteer: {
-            name: command.name.trim().slice(0, 200),
-            task: command.task.trim().slice(0, 200),
-            result: command.result.trim().slice(0, 2000),
-          },
-        },
-      };
-    }
-    case "add_referral": {
-      const blocked = activeOnly(document);
-      if (blocked || command.recipient.trim() === "") {
-        return blocked ?? { ok: false, code: "invalid" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          referrals: [
-            ...document.referrals,
-            {
-              id: command.id,
-              recipient: command.recipient.trim().slice(0, 200),
-              sentOn: command.sentOn,
-              replyFileName: command.replyFileName.trim().slice(0, 300),
-              inspections: [],
-            },
-          ],
-        },
-      };
-    }
-    case "add_inspection": {
-      const blocked = activeOnly(document);
-      const referral = document.referrals.find(
-        (item) => item.id === command.referralId,
-      );
-      if (blocked || referral === undefined || command.findings.trim() === "") {
-        return blocked ?? { ok: false, code: "invalid" };
-      }
-      return {
-        ok: true,
-        document: {
-          ...document,
-          referrals: document.referrals.map((item) =>
-            item.id === referral.id
-              ? {
-                  ...item,
-                  inspections: [
-                    ...item.inspections,
-                    {
-                      id: command.id,
-                      on: command.on,
-                      by: command.by.trim().slice(0, 200),
-                      outcome: command.outcome.trim().slice(0, 80),
-                      findings: command.findings.trim().slice(0, 2000),
-                    },
-                  ],
-                }
-              : item,
-          ),
-        },
-      };
-    }
-  }
-};
-
 export const appFactsFromRecords = (
   records: readonly PrivateRecordRow[],
 ): AppCaseFacts => {
@@ -475,6 +186,9 @@ export const appFactsFromRecords = (
   let reporterPhone = "";
   let reporterEmail = "";
   let shareWithAuthorities = false;
+  let conditionDetails: FormSnapshotV1["condition"] | undefined;
+  let outcome: ReportOutcome | undefined;
+  let report: AppCaseFacts["report"];
 
   for (const record of records) {
     if (!isRecord(record.payload)) {
@@ -484,11 +198,27 @@ export const appFactsFromRecords = (
       continue;
     }
     if (record.kind === "form_snapshot") {
+      const snapshot = parseFormSnapshot(record.payload);
+      conditionDetails = snapshot.success ? snapshot.data.condition : undefined;
+      outcome = snapshot.success ? snapshot.data.outcome : undefined;
+      report = snapshot.success
+        ? {
+            species: snapshot.data.species,
+            ...(snapshot.data.dead ? { dead: snapshot.data.dead } : {}),
+            ...(snapshot.data.cruelty
+              ? { cruelty: snapshot.data.cruelty }
+              : {}),
+            ...(snapshot.data.other ? { other: snapshot.data.other } : {}),
+            ...(snapshot.data.closure
+              ? { closure: snapshot.data.closure }
+              : {}),
+          }
+        : undefined;
       situationType = text(record.payload.situationType) || situationType;
       const species = isRecord(record.payload.species)
         ? record.payload.species
         : undefined;
-      speciesKey = text(species?.kindKey) || speciesKey;
+      speciesKey = text(species?.kindKey);
       const condition = isRecord(record.payload.condition)
         ? record.payload.condition
         : undefined;
@@ -497,13 +227,15 @@ export const appFactsFromRecords = (
           typeof item === "string" ? [item] : [],
         );
       }
-      description = text(condition?.otherText) || description;
+      description = text(condition?.otherText);
     }
     if (record.kind === "location") {
       address = text(record.payload.address) || address;
       const coordinates = isRecord(record.payload.coordinates)
         ? record.payload.coordinates
         : undefined;
+      latitude = undefined;
+      longitude = undefined;
       if (typeof coordinates?.latitude === "number") {
         latitude = coordinates.latitude;
       }
@@ -531,6 +263,9 @@ export const appFactsFromRecords = (
     ...(longitude === undefined ? {} : { longitude }),
     symptoms,
     description,
+    ...(conditionDetails ? { condition: conditionDetails } : {}),
+    ...(outcome ? { outcome } : {}),
+    ...(report ? { report } : {}),
     reporterName,
     reporterPhone,
     reporterEmail,
@@ -557,6 +292,7 @@ type QueueRow = {
   created_at: Date;
   updated_at: Date;
   document: unknown;
+  revision: number | null;
 };
 
 type PrivateRow = {
@@ -572,6 +308,7 @@ export type StoredAdminCase = Readonly<{
   updatedAt: Date;
   document: AdminCaseDocument;
   facts: AppCaseFacts;
+  revision: number;
 }>;
 
 const groupFacts = (
@@ -588,40 +325,61 @@ const groupFacts = (
 
 export const loadAdminCases = async (
   sql: Sql,
+  options: Readonly<{
+    streamId?: string;
+    offset?: number;
+    limit?: number;
+  }> = {},
 ): Promise<readonly StoredAdminCase[]> => {
   const queues = await sql<QueueRow[]>`
     select
       queue.stream_id,
       queue.workflow_state,
       queue.created_at,
-      queue.updated_at,
-      work.document
+      greatest(queue.updated_at, work.updated_at) as updated_at,
+      work.document,
+      work.revision
     from ah.case_queue_projection queue
     left join ah.admin_case_work work on work.stream_id = queue.stream_id
-    where queue.workflow_state <> 'expired'
-    order by queue.updated_at desc
-    limit 100
+    where queue.workflow_state not in ('draft', 'expired')
+      ${options.streamId === undefined ? sql`` : sql`and queue.stream_id = ${options.streamId}::uuid`}
+    order by greatest(queue.updated_at, work.updated_at) desc, queue.stream_id desc
+    limit ${options.limit ?? 100}
+    offset ${options.offset ?? 0}
   `;
   if (queues.length === 0) {
     return [];
   }
   const ids = queues.map((row) => row.stream_id);
   const records = await sql<PrivateRow[]>`
-    select stream_id, kind, payload
-    from ah.private_records
-    where deleted_at is null
-      and stream_id in ${sql(ids)}
+    select records.stream_id, records.kind, records.payload
+    from ah.private_records records
+    left join ah.events event on event.stream_id = records.stream_id
+      and event.payload->>'privateRecordId' = records.private_record_id::text
+    where records.deleted_at is null
+      and records.stream_id in ${sql(ids)}
+    order by records.created_at, event.stream_version, records.private_record_id
   `;
   const facts = groupFacts(records);
   return queues.map((row) => {
     const app = appFactsFromRecords(facts.get(row.stream_id) ?? []);
+    const document = parseAdminDocument(row.document, app.situationType);
+    const mode =
+      row.workflow_state === "completed"
+        ? "closed"
+        : row.workflow_state === "in_review"
+          ? "active"
+          : document.mode === "closed"
+            ? "passive"
+            : document.mode;
     return {
       streamId: row.stream_id,
       workflowState: row.workflow_state,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      document: parseAdminDocument(row.document, app.situationType),
+      document: { ...document, mode },
       facts: app,
+      revision: row.revision ?? 0,
     };
   });
 };

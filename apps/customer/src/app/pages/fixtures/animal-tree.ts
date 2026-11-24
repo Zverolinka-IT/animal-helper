@@ -38,7 +38,11 @@ for (const [groupKey, labels] of Object.entries(groups)) {
   const group = branch(groupKey, labels)
   animalCatalogueTree.children.push(group)
   const branches = new Map<string, AnimalBranch>()
-  for (const animal of animalKinds.filter(item => item.groupKey === groupKey)) {
+  for (const animal of animalKinds.filter(
+    item =>
+      item.groupKey === groupKey &&
+      (item.matrix.crueltyId !== undefined || item.matrix.injuredId !== undefined || item.matrix.strayId !== undefined)
+  )) {
     let parent = group
     const pathLabels = [group.label]
     for (const [key, labelMap] of [

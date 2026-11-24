@@ -31,7 +31,8 @@ export type AnimalGroupsView = {
   root: AnimalBranch
 }
 
-export type AnimalNode = AnimalBranch | { kind: 'animal'; id: string; label: string; detail: string; imageUrl?: string }
+export type AnimalNode =
+  AnimalBranch | { kind: 'animal'; id: string; label: string; detail: string; imageUrl?: string; speciesKey?: string }
 
 export type AnimalBranch = {
   kind: 'branch'

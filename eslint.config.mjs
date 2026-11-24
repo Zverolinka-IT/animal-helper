@@ -15,11 +15,12 @@ export default defineConfig(
       "**/node_modules/**",
       "**/test-results/**",
       "**/playwright-report/**",
-      "apps/backoffice/**/*.vue",
+      "**/.vercel/**",
+      "apps/api/static/**",
     ],
   },
   {
-    ignores: ["apps/customer/**"],
+    ignores: ["apps/customer/**", "apps/backoffice/**/*.vue"],
     extends: [
       eslint.configs.recommended,
       ...tseslint.configs.strictTypeChecked,
@@ -61,7 +62,7 @@ export default defineConfig(
     ],
   },
   {
-    files: ["apps/customer/**/*.{ts,vue,js,mjs}"],
+    files: ["apps/customer/**/*.{ts,vue,js,mjs}", "apps/backoffice/**/*.vue"],
     extends: [
       eslint.configs.recommended,
       ...tseslint.configs.recommended,

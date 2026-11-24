@@ -24,7 +24,19 @@ export const instructionKeys = [
   "self_help",
 ] as const;
 
-export type InstructionKey = (typeof instructionKeys)[number];
+export type FixedInstructionKey = (typeof instructionKeys)[number];
+export type ContactOptionInstructionKey = `contact.option.${string}`;
+export type InstructionKey = FixedInstructionKey | ContactOptionInstructionKey;
+export const isContactOptionInstruction = (
+  value: string,
+): value is ContactOptionInstructionKey =>
+  /^contact\.option\.[a-z0-9][a-z0-9-]{0,47}$/u.test(value);
+export const isContactInstruction = (value: string): boolean =>
+  isContactOptionInstruction(value) ||
+  ["contact.primary", "contact.secondary", "volunteers"].includes(value);
+export const contactOptionPath = (
+  instructionKey: ContactOptionInstructionKey,
+): string => `/contacts/${instructionKey.slice("contact.option.".length)}`;
 
 export const copySlotKeys = [
   "warning.do_not",
@@ -35,12 +47,14 @@ export const copySlotKeys = [
   "contact.secondary.body",
   "volunteers.body",
   "self_help.intro",
+  "contact.title",
+  "contact.body",
 ] as const;
 
 export type CopySlotKey = (typeof copySlotKeys)[number];
 
 export const instructionSlotKeys: Readonly<
-  Record<InstructionKey, readonly CopySlotKey[]>
+  Record<FixedInstructionKey, readonly CopySlotKey[]>
 > = {
   "warning.do_not": ["warning.do_not"],
   "warning.do_before": ["warning.do_before"],
@@ -50,10 +64,17 @@ export const instructionSlotKeys: Readonly<
   self_help: ["self_help.intro"],
 };
 
+export const slotsForInstruction = (
+  key: InstructionKey,
+): readonly CopySlotKey[] =>
+  isContactOptionInstruction(key)
+    ? ["contact.title", "contact.body"]
+    : instructionSlotKeys[key];
+
 export type InstructionPolarity = "do" | "do_not" | "info";
 
 export const polarityFor: Readonly<
-  Record<InstructionKey, InstructionPolarity>
+  Record<FixedInstructionKey, InstructionPolarity>
 > = {
   "warning.do_not": "do_not",
   "warning.do_before": "do",
@@ -62,8 +83,14 @@ export const polarityFor: Readonly<
   volunteers: "info",
   self_help: "do",
 };
+export const polarityForInstruction = (
+  key: InstructionKey,
+): InstructionPolarity =>
+  isContactOptionInstruction(key) ? "info" : polarityFor[key];
 
-export const instructionSortOrder: Readonly<Record<InstructionKey, number>> = {
+export const instructionSortOrder: Readonly<
+  Record<FixedInstructionKey, number>
+> = {
   "warning.do_not": 10,
   "warning.do_before": 20,
   "contact.primary": 30,
@@ -71,6 +98,8 @@ export const instructionSortOrder: Readonly<Record<InstructionKey, number>> = {
   volunteers: 50,
   self_help: 60,
 };
+export const sortOrderForInstruction = (key: InstructionKey): number =>
+  isContactOptionInstruction(key) ? 30 : instructionSortOrder[key];
 
 const includesKey = <Key extends string>(
   keys: readonly Key[],
@@ -78,7 +107,7 @@ const includesKey = <Key extends string>(
 ): value is Key => (keys as readonly string[]).includes(value);
 
 export const isInstructionKey = (value: string): value is InstructionKey =>
-  includesKey(instructionKeys, value);
+  includesKey(instructionKeys, value) || isContactOptionInstruction(value);
 
 export const isCopySlotKey = (value: string): value is CopySlotKey =>
   includesKey(copySlotKeys, value);
@@ -92,6 +121,7 @@ export const screenForInstruction = (
   instructionKey: InstructionKey,
   flowKey: FlowKey,
 ): ScreenKey | undefined => {
+  if (isContactOptionInstruction(instructionKey)) return "w15";
   const screens: readonly ScreenKey[] = flowFor(flowKey).screens;
   const has = (key: ScreenKey): boolean => screens.includes(key);
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   syntheticFormSnapshot,
+  syntheticContactPayload,
   type FormSnapshotV1,
   type TransportCaseCommand,
 } from "@animal-helper/contracts";
@@ -63,6 +64,134 @@ const scriptedTransport = (
 };
 
 describe("case session", () => {
+  it.each(["form_snapshot", "contact", "submit_draft"])(
+    "retries the complete report intent after a failure at %s and a reload",
+    async (phase) => {
+      const store = createMemoryCaseStore();
+      let failed = false;
+      const transport = scriptedTransport((command) => {
+        if (
+          !failed &&
+          (command.type === phase ||
+            (command.type === "attach_private_data" && command.kind === phase))
+        ) {
+          failed = true;
+          return "offline";
+        }
+        return applied(
+          command.expectedVersion + 1,
+          command.type === "submit_draft" ? "received" : "draft",
+        );
+      });
+      const form: FormSnapshotV1 = {
+        ...syntheticFormSnapshot,
+        outcome: {
+          status: "unresolved",
+          reasons: ["other"],
+          otherText: "Synthetic failure",
+        },
+      };
+      const first = createCaseSession({ store, transport });
+      await first.openDraft();
+      expect((await first.submit(syntheticContactPayload, form)).ok).toBe(
+        false,
+      );
+      const record = await store.load();
+      if (!record) throw new Error("expected durable report intent");
+      const queued = record.queue;
+      const beforeRetry = transport.sent.length;
+      const reloaded = createCaseSession({ store, transport });
+      const { schemaVersion, ...fields } = structuredClone(form);
+      expect(
+        (
+          await reloaded.submit(structuredClone(syntheticContactPayload), {
+            ...fields,
+            schemaVersion,
+          })
+        ).ok,
+      ).toBe(true);
+      expect(transport.sent.slice(beforeRetry)).toEqual(queued);
+      expect((await reloaded.snapshot())?.expectedVersion).toBe(4);
+    },
+  );
+
+  it("supersedes an unacknowledged outcome even when contact data is unchanged", async () => {
+    let failed = false;
+    const transport = scriptedTransport((command) => {
+      if (command.type === "submit_draft" && !failed) {
+        failed = true;
+        return "offline";
+      }
+      return applied(
+        command.expectedVersion + 1,
+        command.type === "submit_draft" ? "received" : "draft",
+      );
+    });
+    const session = createCaseSession({
+      store: createMemoryCaseStore(),
+      transport,
+    });
+    await session.openDraft();
+    expect(
+      (
+        await session.submit(syntheticContactPayload, {
+          ...syntheticFormSnapshot,
+          outcome: { status: "unresolved", reasons: ["escaped"] },
+        })
+      ).ok,
+    ).toBe(false);
+    const oldSubmit = transport.sent.at(-1);
+    if (!oldSubmit) throw new Error("expected submission attempt");
+    const corrected: FormSnapshotV1 = {
+      ...syntheticFormSnapshot,
+      outcome: { status: "resolved", reasons: [] },
+    };
+    expect((await session.submit(syntheticContactPayload, corrected)).ok).toBe(
+      true,
+    );
+    expect(transport.sent.at(-3)).toMatchObject({
+      kind: "form_snapshot",
+      privatePayload: corrected,
+      expectedVersion: oldSubmit.expectedVersion,
+    });
+    expect(transport.sent.at(-1)?.commandId).not.toBe(oldSubmit.commandId);
+  });
+  it("persists the exact envelope before sending and refuses to send without durable storage", async () => {
+    const store = createMemoryCaseStore();
+    let sends = 0;
+    const session = createCaseSession({
+      store,
+      transport: {
+        async sendCommand({ command }) {
+          sends++;
+          const saved = await store.load();
+          expect(saved?.queue[0]).toEqual(command);
+          expect(saved?.capabilityToken).toBeDefined();
+          return applied(1);
+        },
+        getStatus: () => Promise.resolve({ status: 404, body: undefined }),
+      },
+    });
+    expect((await session.openDraft()).ok).toBe(true);
+    const unavailable = createCaseSession({
+      store: {
+        ...createMemoryCaseStore(),
+        save: () => Promise.reject(new Error("synthetic quota error")),
+      },
+      transport: {
+        sendCommand: () => {
+          sends++;
+          return Promise.resolve(applied(1));
+        },
+        getStatus: () => Promise.resolve({ status: 404, body: undefined }),
+      },
+    });
+    expect(await unavailable.openDraft()).toMatchObject({
+      ok: false,
+      error: { code: "STORAGE_UNAVAILABLE" },
+    });
+    expect(sends).toBe(1);
+  });
   it("queues create, attach, and submit with stable ids and rising versions", async () => {
     const transport = scriptedTransport((command) =>
       applied(

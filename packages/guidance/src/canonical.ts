@@ -1,3 +1,4 @@
+import type { ReportGuidanceProfile } from "@animal-helper/contracts";
 const canonicalize = (value: unknown): string => {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value);
@@ -23,9 +24,11 @@ export type CanonicalGuidanceCell = {
   kindKey: string;
   sortOrder: number;
   actionTargetKey?: string;
+  clinicVariant?: "standard" | "protected";
 };
 
 export type CanonicalGuidanceDocument = {
+  reportProfiles?: readonly ReportGuidanceProfile[];
   copy: Readonly<Record<string, string>>;
   cells: readonly CanonicalGuidanceCell[];
 };
@@ -43,6 +46,9 @@ export const guidanceDocumentValue = (
       ...(cell.actionTargetKey === undefined
         ? {}
         : { actionTargetKey: cell.actionTargetKey }),
+      ...(cell.clinicVariant === undefined
+        ? {}
+        : { clinicVariant: cell.clinicVariant }),
     }))
     .sort((left, right) => {
       const kind = left.kindKey.localeCompare(right.kindKey);
@@ -52,6 +58,15 @@ export const guidanceDocumentValue = (
       return left.instructionKey.localeCompare(right.instructionKey);
     }),
   copy: document.copy,
+  ...(document.reportProfiles?.length
+    ? {
+        reportProfiles: [...document.reportProfiles].sort((a, b) =>
+          `${a.context}:${a.kindKey ?? ""}`.localeCompare(
+            `${b.context}:${b.kindKey ?? ""}`,
+          ),
+        ),
+      }
+    : {}),
 });
 
 export const canonicalizeGuidanceDocument = (

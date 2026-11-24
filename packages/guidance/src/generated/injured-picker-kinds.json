@@ -1,0 +1,650 @@
+[
+  {
+    "key": "a0004",
+    "groupKey": "domestic",
+    "categoryKey": "companion",
+    "labelSk": "Korytnačka písmenková",
+    "matrix": {}
+  },
+  {
+    "key": "a0023",
+    "groupKey": "farm",
+    "categoryKey": "farm",
+    "labelSk": "Morka domáca",
+    "matrix": {}
+  },
+  {
+    "key": "a0025",
+    "groupKey": "wildlife",
+    "categoryKey": "aquatic",
+    "labelSk": "Raky",
+    "matrix": {}
+  },
+  {
+    "key": "a0144",
+    "groupKey": "wildlife",
+    "categoryKey": "amphibian",
+    "labelSk": "Mloky a salamandry",
+    "matrix": {}
+  },
+  {
+    "key": "a0145",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Jašterice",
+    "matrix": {}
+  },
+  {
+    "key": "a0029",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Slepúch lámavý",
+    "matrix": {}
+  },
+  {
+    "key": "a0030",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Slepúch východný",
+    "matrix": {}
+  },
+  {
+    "key": "a0031",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Užovka fŕkaná",
+    "matrix": {}
+  },
+  {
+    "key": "a0032",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Užovka hladká",
+    "matrix": {}
+  },
+  {
+    "key": "a0034",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Užovka stromová",
+    "matrix": {}
+  },
+  {
+    "key": "a0035",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Vretenica obyčajná",
+    "matrix": {}
+  },
+  {
+    "key": "a0190",
+    "groupKey": "wildlife",
+    "categoryKey": "reptile",
+    "labelSk": "Vretenica obyčajná – v horách",
+    "matrix": {}
+  },
+  {
+    "key": "a0036",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Daniel škvrnitý",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0037",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Diviak lesný",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0038",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Jeleník (pasrnec) bielochvostý",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0039",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Jeleň lesný",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0040",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Jeleň sika",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0041",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Kamzík vrchovský alpský",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0042",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Kamzík vrchovský tatranský",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0043",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Los mokraďový",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0044",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Muflón lesný",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0045",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Srnec lesný",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0046",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Zubor európsky",
+    "matrix": {},
+    "subcategoryKey": "forest_game"
+  },
+  {
+    "key": "a0050",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Šakal",
+    "matrix": {},
+    "subcategoryKey": "large_carnivores"
+  },
+  {
+    "key": "a0051",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Bielozúbka",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0053",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Dulovnica",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0054",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Hraboš poľný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0055",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Hraboš severský panónsky",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0056",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Hraboš snežný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0057",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Hraboš tatranský",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0058",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Hranostaj čiernochvostý",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0059",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Jazvec lesný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0062",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Králik divý",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0069",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Myšovka",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0070",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Norok európsky",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0071",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Norok severoamerický",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0072",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Nutria riečna",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0073",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Ondatra pižmová",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0074",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Piskor",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0076",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Psík medvedíkovitý",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0077",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Svišť vrchovský tatranský",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0078",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Syseľ pasienkový",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0079",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Tchor stepný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0080",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Tchor tmavý",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0081",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Veverica stromová",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0082",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Zajac poľný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0083",
+    "groupKey": "wildlife",
+    "categoryKey": "wild_mammal",
+    "labelSk": "Škrečok poľný",
+    "matrix": {},
+    "subcategoryKey": "small_wild_mammals"
+  },
+  {
+    "key": "a0148",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Bližšie neurčené mláďa",
+    "matrix": {}
+  },
+  {
+    "key": "a0149",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Neviem určiť",
+    "matrix": {}
+  },
+  {
+    "key": "a0087",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Orliak",
+    "matrix": {},
+    "subcategoryKey": "raptors"
+  },
+  {
+    "key": "a0090",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Sup",
+    "matrix": {},
+    "subcategoryKey": "raptors"
+  },
+  {
+    "key": "a0091",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Drop",
+    "matrix": {},
+    "subcategoryKey": "raptors"
+  },
+  {
+    "key": "a0092",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Bocian",
+    "matrix": {},
+    "subcategoryKey": "raptors"
+  },
+  {
+    "key": "a0097",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Pelikán",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0098",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Bučiak",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0099",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Ibisovec",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0101",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Sluka",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0102",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Behavec",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0103",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Brehár",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0104",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Kalužiak",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0105",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Kulík",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0106",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Pobrežník",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0107",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Rybár",
+    "matrix": {},
+    "subcategoryKey": "waterfowl"
+  },
+  {
+    "key": "a0109",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Bažant",
+    "matrix": {}
+  },
+  {
+    "key": "a0110",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Jarabica",
+    "matrix": {}
+  },
+  {
+    "key": "a0111",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Jariabok",
+    "matrix": {}
+  },
+  {
+    "key": "a0112",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Prepelica",
+    "matrix": {}
+  },
+  {
+    "key": "a0113",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Hlucháň",
+    "matrix": {}
+  },
+  {
+    "key": "a0114",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Tetrov",
+    "matrix": {}
+  },
+  {
+    "key": "a0115",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Kuropta",
+    "matrix": {}
+  },
+  {
+    "key": "a0117",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Holub hrivnák",
+    "matrix": {},
+    "subcategoryKey": "pigeons"
+  },
+  {
+    "key": "a0118",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Holub plúžik",
+    "matrix": {},
+    "subcategoryKey": "pigeons"
+  },
+  {
+    "key": "a0119",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Hrdlička poľná",
+    "matrix": {},
+    "subcategoryKey": "pigeons"
+  },
+  {
+    "key": "a0120",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Hrdlička záhradná",
+    "matrix": {},
+    "subcategoryKey": "pigeons"
+  },
+  {
+    "key": "a0126",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Ďateľ",
+    "matrix": {}
+  },
+  {
+    "key": "a0127",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Žlna",
+    "matrix": {}
+  },
+  {
+    "key": "a0131",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Kukučka",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0132",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Rybárik",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0134",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Stehlík",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0138",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Vlha",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0140",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Žltochvost",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0141",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Strakoš",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0142",
+    "groupKey": "wildlife",
+    "categoryKey": "bird",
+    "labelSk": "Trasochvost",
+    "matrix": {},
+    "subcategoryKey": "songbirds"
+  },
+  {
+    "key": "a0168",
+    "groupKey": "exotic",
+    "categoryKey": "exotic",
+    "labelSk": "Iné exotické zviera / neviem určiť",
+    "matrix": {}
+  }
+]

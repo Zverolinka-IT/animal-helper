@@ -5,6 +5,8 @@ export type ClientError =
   | Readonly<{ code: "CASE_ALREADY_OPEN"; retryable: false }>
   | Readonly<{ code: "CASE_READ_ONLY"; retryable: false }>
   | Readonly<{ code: "NETWORK_FAILURE"; retryable: true }>
+  | Readonly<{ code: "STORAGE_UNAVAILABLE"; retryable: false }>
+  | Readonly<{ code: "UNSUPPORTED_SITUATION"; retryable: false }>
   | Readonly<{ code: "INVALID_RESPONSE"; retryable: false }>
   | Readonly<{ code: "VERSION_CONFLICT"; retryable: false }>
   | Readonly<{ code: "API"; retryable: false; apiCode: string }>;
@@ -37,6 +39,11 @@ export const caseReadOnly: ClientError = {
 export const networkFailure: ClientError = {
   code: "NETWORK_FAILURE",
   retryable: true,
+};
+
+export const storageUnavailable: ClientError = {
+  code: "STORAGE_UNAVAILABLE",
+  retryable: false,
 };
 
 export const invalidResponse: ClientError = {

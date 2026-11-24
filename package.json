@@ -17,6 +17,7 @@
     "db:down": "node scripts/local-db.mjs down",
     "db:init": "node scripts/local-db.mjs init",
     "db:migrate": "node scripts/migrate-db.mjs",
+    "db:check": "node scripts/migrate-db.mjs --check",
     "db:reset": "node scripts/local-db.mjs reset",
     "db:status": "node scripts/local-db.mjs status",
     "db:up": "node scripts/local-db.mjs up",

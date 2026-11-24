@@ -1,7 +1,8 @@
 import { apiError } from "./errors.js";
 import type { ApiRequest, ApiResponse } from "./handler.js";
 
-export const MAX_BODY_BYTES = 65_536;
+import { bodyLimit } from "./body-limit.js";
+export { MAX_BODY_BYTES } from "./body-limit.js";
 
 const textHeader = (request: Request, name: string): string | undefined => {
   const value = request.headers.get(name);
@@ -35,16 +36,42 @@ export const readFetchBody = async (
   }
 
   const declared = textHeader(request, "content-length");
+  const limit = bodyLimit(request.method, new URL(request.url).pathname);
   if (declared !== undefined) {
     const length = Number(declared);
-    if (!Number.isInteger(length) || length < 0 || length > MAX_BODY_BYTES) {
+    if (!Number.isInteger(length) || length < 0 || length > limit) {
       return { ok: false };
     }
   }
 
-  const bytes = await request.arrayBuffer();
-  if (bytes.byteLength > MAX_BODY_BYTES) {
-    return { ok: false };
+  const chunks: Uint8Array[] = [];
+  const reader = request.body?.getReader();
+  let total = 0;
+  if (reader) {
+    try {
+      for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        const value: unknown = chunk.value;
+        if (!(value instanceof Uint8Array)) return { ok: false };
+        total += value.byteLength;
+        if (total > limit) {
+          await reader.cancel();
+          return { ok: false };
+        }
+        chunks.push(value);
+      }
+    } catch {
+      return { ok: false };
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
 
   if (bytes.byteLength === 0) {

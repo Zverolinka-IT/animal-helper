@@ -6,6 +6,7 @@ import {
   fetchResponseFromApi,
   MAX_BODY_BYTES,
   serveFetch,
+  readFetchBody,
 } from "../src/fetch-handler.js";
 import { createApiHandler } from "../src/handler.js";
 import { createMemoryGateway } from "../src/memory-gateway.js";
@@ -22,6 +23,30 @@ const handle = createApiHandler({
 });
 
 describe("fetch adapter", () => {
+  it("permits bounded contact import bodies while retaining ordinary endpoint limits", async () => {
+    const body = JSON.stringify({ note: "x".repeat(100_000) });
+    expect(
+      await readFetchBody(
+        new Request("https://admin.example/admin/contact-directory/import", {
+          method: "POST",
+          body,
+        }),
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      await readFetchBody(
+        new Request("https://admin.example/commands", { method: "POST", body }),
+      ),
+    ).toEqual({ ok: false });
+    expect(
+      await readFetchBody(
+        new Request("https://admin.example/admin/contact-directory/import", {
+          method: "POST",
+          body: "x".repeat(2_000_001),
+        }),
+      ),
+    ).toEqual({ ok: false });
+  });
   it("keeps the original path, query, and public host", () => {
     const request = apiRequestFromFetch(
       new Request("https://internal.vercel/status?x=1", {

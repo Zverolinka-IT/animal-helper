@@ -1,14 +1,18 @@
-// Injured and stray reports go through the walk adapter, which persists case
-// status with the command client. Other situations stay on the fixture provider.
-// Draft UI state, router history, animations and focus remain on the client.
+// All report types persist through the command client; presentation state stays local.
 export {
   previewAccess,
+  previewAnimalCatalogue,
+  previewAnimalGroupsView,
   previewContactView,
   previewDetailsView,
   previewHomeView,
   previewLocationView,
   previewMediaView,
-  previewPageAdvice,
   previewThankYouView
 } from './pages/fixtures/preview-server'
 export { walkFlowActions as flowActions } from './walk/adapter'
+
+import { previewPageAdvice as fixturePageAdvice } from './pages/fixtures/preview-server'
+import { walkFlowActions } from './walk/adapter'
+export const previewPageAdvice = (screen: unknown) =>
+  walkFlowActions.advicePanel(fixturePageAdvice(screen === 'contact-option' ? 'W15' : screen))

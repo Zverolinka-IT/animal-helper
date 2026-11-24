@@ -109,3 +109,22 @@ export {
   type StoredGuidanceCell,
   type StoredGuidanceDocument,
 } from "./guidance.js";
+export { executeAdminCaseCommand } from "./admin-case-commands.js";
+export {
+  ContactDirectoryError,
+  executeContactDirectoryCommand,
+  loadAdminContactDirectory,
+  loadContactDirectoryRelease,
+} from "./contact-directory.js";
+export {
+  createOperatorInvitation,
+  grantOperatorManagement,
+  listOperatorAccounts,
+  setOperatorManagement,
+  listOperatorInvitations,
+  OperatorManagementError,
+  revokeOperatorInvitation,
+} from "./operator-invitations.js";
+export { replaceGuidanceContacts } from "./guidance.js";
+
+export { saveReportGuidanceProfiles } from "./guidance.js";

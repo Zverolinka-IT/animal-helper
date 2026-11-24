@@ -7,6 +7,7 @@ import {
   previewThankYouView
 } from '../flow-client'
 import { policeResultFixture } from '../pages/fixtures/cruelty-followup'
+import { fixtureFlowActions } from '../pages/fixtures/flow-actions'
 import { homeFixture } from '../pages/fixtures/home'
 import { otherFailedFixture, otherSituationFixture } from '../pages/fixtures/other-situations'
 import { thankYouFixture } from '../pages/fixtures/thank-you'
@@ -35,13 +36,13 @@ it.each([
 it('only starts actions exposed by the home payload', async () => {
   expect(await flowActions.start({ ...homeFixture, allowedActions: [] }, 'start-injured')).toBeUndefined()
   expect(previewSession.value).toBeNull()
-  expect(await flowActions.start(homeFixture, 'start-cruelty')).toBe('W27')
+  expect(fixtureFlowActions.start(homeFixture, 'start-cruelty')).toBe('W27')
   expect(previewSession.value?.situation).toBe('cruelty')
 })
 
 it('keeps road documentation and the thanks return target in the fixture provider', async () => {
-  const road = otherSituationFixture.choices.find(choice => choice.id === 'road')!
-  expect(flowActions.chooseSituation(road)).toBe('W03')
+  expect(otherSituationFixture.choices.map(choice => choice.id)).toEqual(['other'])
+  expect(flowActions.chooseSituation({ id: 'road', label: 'Na/pri ceste', target: 'W03' })).toBe('W03')
   expect(flowActions.followup(otherFailedFixture, otherFailedFixture.actions[0]!)).toBe('W04')
   expect(previewMediaView().backTarget).toBe('W37')
   expect(await flowActions.details({}, 'animalDetails', 'W39')).toBe('W39')
@@ -76,4 +77,52 @@ it.each(['abort', 'new-session'] as const)('ignores a media result after %s', as
   await vi.advanceTimersByTimeAsync(20)
   expect(await result).toBeUndefined()
   expect(previewSession.value?.identificationFailed).toBeUndefined()
+})
+
+it('uses distinct optional questions for stray, dead, acute cruelty and general Other', () => {
+  beginPreview('stray')
+  expect(previewDetailsView().questions.map(question => question.id)).toEqual(['behaviour', 'collar', 'juvenile'])
+  beginPreview('dead')
+  expect(previewDetailsView().questions.map(question => question.id)).toEqual(['suspiciousSigns', 'animalCount'])
+  expect(previewDetailsView().questions.every(question => !question.required)).toBe(true)
+  beginPreview('cruelty')
+  expect(previewDetailsView().questions[0]?.options.some(option => option.id === 'conditions')).toBe(true)
+  previewSession.value!.crueltyReport = { outcome: 'not-reported', reasons: [] }
+  expect(previewDetailsView().questions[0]?.options.map(option => option.id)).toEqual([
+    'burned',
+    'beaten',
+    'poisoned',
+    'unknown'
+  ])
+  expect(previewDetailsView().questions.map(question => question.id)).toEqual(['cruelty', 'description'])
+  beginPreview('other')
+  previewSession.value!.otherSituation = 'other'
+  expect(previewDetailsView().questions[0]?.id).toBe('description')
+  previewSession.value!.otherSituation = 'road'
+  expect(previewDetailsView().questions).toEqual([])
+})
+
+it('only offers failure reasons for visited services and appropriate sharing consent', async () => {
+  const { unsuccessfulThankYouFixture } = await import('../pages/fixtures/thank-you')
+  beginPreview('injured')
+  previewSession.value!.visitedHelp = ['volunteers', 'vet_exotic']
+  const failed = previewThankYouView(unsuccessfulThankYouFixture)
+  const ids = failed.reasons!.options.map(option => option.id)
+  expect(ids).toContain('clinic-closed')
+  expect(ids).toContain('volunteers')
+  expect(ids).toContain('other')
+  expect(ids).not.toContain('municipality-refused')
+  expect(ids).not.toContain('police-refused')
+  expect(ids).not.toContain('equipment')
+  expect(failed.consents.map(consent => consent.id)).toContain('share-contact')
+  const success = previewThankYouView(thankYouFixture)
+  expect(success.consents.map(consent => consent.id)).toEqual(['newsletter'])
+  expect(success.values?.email).toBeUndefined()
+  expect(success.reasons).toBeUndefined()
+  expect(success.reasonGroups).toBeUndefined()
+  expect(success.help).toBeUndefined()
+  // Reaching completion without choosing an outcome does not claim that help succeeded.
+  expect(success.outcome).toBeUndefined()
+  previewSession.value!.completionOutcome = 'resolved'
+  expect(previewThankYouView(thankYouFixture).outcome).toBe('resolved')
 })

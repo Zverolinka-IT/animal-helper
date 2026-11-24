@@ -15,7 +15,7 @@ const run = (command, args) =>
 
 await run("pnpm", ["--filter", "@animal-helper/backoffice", "build"]);
 await run("rm", ["-rf", "static"]);
-await run("mkdir", ["-p", "static", "api"]);
+await run("mkdir", ["-p", "static", "dist"]);
 await run("cp", ["-R", "../backoffice/dist/.", "static/"]);
 await run("pnpm", [
   "exec",
@@ -25,7 +25,22 @@ await run("pnpm", [
   "--platform=node",
   "--format=esm",
   "--target=node24",
-  "--outfile=api/index.mjs",
+  "--outfile=dist/vercel-entry.mjs",
   "--external:postgres",
   "--external:@simplewebauthn/server",
 ]);
+
+// Production secrets stay in Vercel. Apply additive migrations after the build
+// succeeds and before the deployment can receive production traffic.
+if (process.env.VERCEL_ENV === "production") {
+  if (
+    process.env.DATABASE_ENVIRONMENT !== "production" ||
+    process.env.DATABASE_SSL_MODE !== "verify" ||
+    !process.env.DATABASE_MIGRATION_URL
+  ) {
+    throw new Error(
+      "Production migrations require a direct URL and verified TLS.",
+    );
+  }
+  await run("pnpm", ["--workspace-root", "db:migrate"]);
+}

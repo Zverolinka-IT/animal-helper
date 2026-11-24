@@ -10,15 +10,9 @@ export const otherSituationFixture: OtherSituationView = {
   layout: { showMenu: false },
   backTarget: 'W01',
   copy: { back: 'Späť', title: 'V akej situácii je zviera?' },
-  choices: [
-    { id: 'road', label: 'Na/pri ceste alebo koľajniciach', target: 'W03' },
-    {
-      id: 'human',
-      label: 'Uviazlo alebo ho ohrozuje ľudská činnosť (výrub, vypaľovanie, kombajn, stavebné práce a pod.)',
-      target: 'W03'
-    },
-    { id: 'other', label: 'Iná situácia', target: 'W03' }
-  ] as const
+  // Road/rail and human-activity choices stay implemented, but are hidden until
+  // those branches are ready. The remaining choice sends the report to Zverolinka.
+  choices: [{ id: 'other', label: 'Iná situácia', target: 'W03' }] as const
 }
 export const otherFailedFixture: CrueltyFollowupView = {
   ...policeFailedFixture,
@@ -82,7 +76,7 @@ export const humanDetailsFixture: AnimalDetailsView = {
       label: 'Detail situácie',
       hideLabel: true,
       kind: 'single',
-      required: true,
+      required: false,
       options: [
         { id: 'field', label: 'Kombajn/iné práce na poli' },
         { id: 'trees', label: 'Výrub stromu/ov' },
@@ -125,5 +119,28 @@ export const roadInstructionsFixture: InstructionsView = {
   footerActions: [
     { id: 'resolved', label: 'Podarilo sa pomôcť', appearance: 'primary', target: 'W24' },
     { id: 'unresolved', label: 'Nepodarilo sa pomôcť', appearance: 'secondary', target: 'W37' }
+  ]
+}
+
+// General “other” includes a description; road documentation only identifies the animal.
+// Figma examples 1603:5185 / 1603:5286.
+export const generalOtherDetailsFixture: AnimalDetailsView = {
+  ...otherDetailsFixture,
+  copy: {
+    ...animalDetailsFixture.copy,
+    step: 'Krok 3 z 3',
+    progress: 100,
+    description: 'Skontrolujte druh zvieraťa a doplňte detaily o jeho stave.',
+    confirm: 'Nahlásiť'
+  },
+  questions: [
+    {
+      id: 'description',
+      label: 'Opíšte situáciu',
+      kind: 'text',
+      required: false,
+      options: [],
+      placeholder: 'Čo sa stalo?'
+    }
   ]
 }

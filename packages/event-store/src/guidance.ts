@@ -1,6 +1,9 @@
+import type { ReportGuidanceProfile } from "@animal-helper/contracts";
 import { randomUUID } from "node:crypto";
 
 import type { Sql } from "postgres";
+import { lockGuidancePublication } from "./guidance-publication-lock.js";
+import { recordOperatorAudit } from "./operators.js";
 
 export class GuidanceConflictError extends Error {
   readonly code = "conflict";
@@ -25,9 +28,11 @@ export type StoredGuidanceCell = Readonly<{
   sortOrder: number;
   copy: Readonly<Record<string, string>>;
   actionTargetKey?: string;
+  clinicVariant?: "standard" | "protected";
 }>;
 
 export type StoredGuidanceDocument = Readonly<{
+  reportProfiles?: readonly ReportGuidanceProfile[];
   copy: Readonly<Record<string, string>>;
   cells: readonly StoredGuidanceCell[];
 }>;
@@ -51,6 +56,7 @@ export type GuidancePublicationRecord = Readonly<{
   contentHash: string;
   publishedAt: Date;
   description?: string;
+  directoryRevisionId?: string;
 }>;
 
 type RevisionRow = {
@@ -74,6 +80,7 @@ type CellRow = {
   sort_order: number;
   copy_json: unknown;
   action_target_key: string | null;
+  clinic_variant: "standard" | "protected" | null;
 };
 
 type CopyRow = {
@@ -121,6 +128,7 @@ const toCell = (row: CellRow): StoredGuidanceCell => ({
   ...(row.action_target_key === null
     ? {}
     : { actionTargetKey: row.action_target_key }),
+  ...(row.clinic_variant == null ? {} : { clinicVariant: row.clinic_variant }),
 });
 
 const withReservedTransaction = async <T>(
@@ -187,13 +195,15 @@ export const loadGuidancePublication = async (
       content_hash: string;
       published_at: Date;
       description: string | null;
+      directory_revision_id: string | null;
     }[]
   >`
     select
       r.revision_id,
       r.content_hash,
       p.published_at,
-      r.description
+      r.description,
+      r.directory_revision_id
     from ah.guidance_publications p
     inner join ah.guidance_revisions r on r.revision_id = p.active_revision_id
     where
@@ -213,6 +223,9 @@ export const loadGuidancePublication = async (
     contentHash: row.content_hash,
     publishedAt: row.published_at,
     ...(row.description === null ? {} : { description: row.description }),
+    ...(row.directory_revision_id === null
+      ? {}
+      : { directoryRevisionId: row.directory_revision_id }),
   };
 };
 
@@ -220,6 +233,10 @@ export const loadGuidanceDocument = async (
   sql: Sql,
   revisionId: string,
 ): Promise<StoredGuidanceDocument | undefined> => {
+  const profileRows = await sql<
+    { report_profiles: ReportGuidanceProfile[] }[]
+  >`select report_profiles from ah.guidance_revisions where revision_id = ${revisionId}::uuid`;
+  const reportProfiles = profileRows[0]?.report_profiles ?? [];
   const copyRows = await sql<CopyRow[]>`
     select copy_slot_key, plain_text
     from ah.guidance_copy
@@ -232,7 +249,8 @@ export const loadGuidanceDocument = async (
       applicability,
       sort_order,
       copy_json,
-      action_target_key
+      action_target_key,
+      clinic_variant
     from ah.guidance_cells
     where revision_id = ${revisionId}::uuid
   `;
@@ -254,6 +272,7 @@ export const loadGuidanceDocument = async (
   return {
     copy,
     cells: cellRows.map(toCell),
+    ...(reportProfiles.length ? { reportProfiles } : {}),
   };
 };
 
@@ -262,6 +281,7 @@ const insertDocumentRows = async (
   revisionId: string,
   document: StoredGuidanceDocument,
 ): Promise<void> => {
+  await sql`update ah.guidance_revisions set report_profiles = ${sql.json([...(document.reportProfiles ?? [])])} where revision_id = ${revisionId}::uuid`;
   for (const [slotKey, text] of Object.entries(document.copy)) {
     if (text === "") {
       continue;
@@ -280,7 +300,8 @@ const insertDocumentRows = async (
         applicability,
         sort_order,
         copy_json,
-        action_target_key
+        action_target_key,
+        clinic_variant
       )
       values (
         ${revisionId}::uuid,
@@ -289,7 +310,8 @@ const insertDocumentRows = async (
         ${cell.applicability},
         ${cell.sortOrder},
         ${sql.json(cell.copy)},
-        ${cell.actionTargetKey ?? null}
+        ${cell.actionTargetKey ?? null},
+        ${cell.clinicVariant ?? null}
       )
     `;
   }
@@ -392,7 +414,8 @@ export const saveGuidanceCell = async (
         applicability,
         sort_order,
         copy_json,
-        action_target_key
+        action_target_key,
+        clinic_variant
       )
       values (
         ${input.revisionId}::uuid,
@@ -401,15 +424,49 @@ export const saveGuidanceCell = async (
         ${input.cell.applicability},
         ${input.cell.sortOrder},
         ${tx.json(input.cell.copy)},
-        ${input.cell.actionTargetKey ?? null}
+        ${input.cell.actionTargetKey ?? null},
+        ${input.cell.clinicVariant ?? null}
       )
       on conflict (revision_id, kind_key, instruction_key)
       do update set
         applicability = excluded.applicability,
         sort_order = excluded.sort_order,
         copy_json = excluded.copy_json,
-        action_target_key = excluded.action_target_key
+        action_target_key = excluded.action_target_key,
+        clinic_variant = excluded.clinic_variant
     `;
+  });
+
+export const replaceGuidanceContacts = async (
+  sql: Sql,
+  input: {
+    revisionId: string;
+    expectedHash: string;
+    nextHash: string;
+    kindKey: string;
+    cells: readonly StoredGuidanceCell[];
+    actorEmail: string;
+    now: Date;
+  },
+): Promise<void> =>
+  withReservedTransaction(sql, async (tx) => {
+    const updated =
+      await tx`update ah.guidance_revisions set content_hash = ${input.nextHash}, updated_at = ${input.now}
+    where revision_id = ${input.revisionId}::uuid and status = 'draft' and content_hash = ${input.expectedHash}
+    returning revision_id`;
+    if (!updated.length) throw new GuidanceConflictError();
+    await tx`delete from ah.guidance_cells where revision_id = ${input.revisionId}::uuid and kind_key = ${input.kindKey}
+    and (instruction_key in ('contact.primary', 'contact.secondary', 'volunteers') or instruction_key like 'contact.option.%')`;
+    for (const cell of input.cells) {
+      await tx`insert into ah.guidance_cells (revision_id, kind_key, instruction_key, applicability, sort_order, copy_json, action_target_key, clinic_variant)
+      values (${input.revisionId}::uuid, ${cell.kindKey}, ${cell.instructionKey}, ${cell.applicability}, ${cell.sortOrder}, ${tx.json(cell.copy)}, ${cell.actionTargetKey ?? null}, ${cell.clinicVariant ?? null})`;
+    }
+    await recordOperatorAudit(tx, {
+      operatorEmail: input.actorEmail,
+      action: "guidance_contacts_saved",
+      outcome: "accepted",
+      streamId: input.revisionId,
+    });
   });
 
 export const publishGuidanceDraft = async (
@@ -425,6 +482,8 @@ export const publishGuidanceDraft = async (
   },
 ): Promise<GuidanceRevisionRecord> =>
   withReservedTransaction(sql, async (tx) => {
+    await lockGuidancePublication(tx);
+    const previousPublication = await loadGuidancePublication(tx, input.scope);
     const locked = await tx<RevisionRow[]>`
       select
         revision_id,
@@ -466,7 +525,8 @@ export const publishGuidanceDraft = async (
         description,
         content_hash,
         source_references,
-        content_reviewed_at
+        content_reviewed_at,
+        directory_revision_id
       )
       values (
         ${publishedId}::uuid,
@@ -483,7 +543,8 @@ export const publishGuidanceDraft = async (
         ${input.description},
         ${input.contentHash},
         ${tx.array([...(draft.source_references ?? [])])},
-        ${draft.content_reviewed_at}
+        ${draft.content_reviewed_at},
+        ${previousPublication?.directoryRevisionId ?? null}::uuid
       )
       returning
         revision_id,
@@ -503,6 +564,7 @@ export const publishGuidanceDraft = async (
       throw new Error("failed to insert published guidance");
     }
 
+    await tx`update ah.guidance_revisions set report_profiles = (select report_profiles from ah.guidance_revisions where revision_id = ${input.draftRevisionId}::uuid) where revision_id = ${publishedId}::uuid`;
     await tx`
       insert into ah.guidance_copy (
         revision_id,
@@ -524,7 +586,8 @@ export const publishGuidanceDraft = async (
         applicability,
         sort_order,
         copy_json,
-        action_target_key
+        action_target_key,
+        clinic_variant
       )
       select
         ${publishedId}::uuid,
@@ -533,7 +596,8 @@ export const publishGuidanceDraft = async (
         applicability,
         sort_order,
         copy_json,
-        action_target_key
+        action_target_key,
+        clinic_variant
       from ah.guidance_cells
       where revision_id = ${input.draftRevisionId}::uuid
     `;
@@ -560,4 +624,29 @@ export const publishGuidanceDraft = async (
         published_at = excluded.published_at
     `;
     return toRevision(published);
+  });
+
+export const saveReportGuidanceProfiles = async (
+  sql: Sql,
+  input: {
+    revisionId: string;
+    expectedHash: string;
+    nextHash: string;
+    profiles: readonly ReportGuidanceProfile[];
+    actorEmail: string;
+    now: Date;
+  },
+): Promise<void> =>
+  withReservedTransaction(sql, async (tx) => {
+    const rows = await tx`update ah.guidance_revisions
+    set report_profiles = ${tx.json([...input.profiles])}, content_hash = ${input.nextHash}, updated_at = ${input.now}
+    where revision_id = ${input.revisionId}::uuid and status = 'draft' and content_hash = ${input.expectedHash}
+    returning revision_id`;
+    if (!rows.length) throw new GuidanceConflictError();
+    await recordOperatorAudit(tx, {
+      operatorEmail: input.actorEmail,
+      action: "report_guidance_saved",
+      outcome: "accepted",
+      streamId: input.revisionId,
+    });
   });

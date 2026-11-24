@@ -1,8 +1,8 @@
 # Administered guidance flow
 
-Status: **implemented for injured copy and applicability**
+Status: **implemented for all five report flows and public contact directories**
 
-Last reviewed: 2026-09-10
+Last reviewed: 2026-10-22
 
 The customer PWA will contain a short, fixed-screen guide for a person who finds
 an injured or distressed animal. The guide is not a report workflow or a
@@ -64,7 +64,7 @@ flow_schema_registry (code-owned)
 guidance_revision (immutable after publication)
   revision_id, flow_key, schema_version, locale, jurisdiction
   status, based_on_revision_id, created_by, created_at
-  jurisdiction_pack_version?
+  directory_revision_id? (immutable published contact snapshot)
   source_references, content_reviewed_at, review_reference?
 
 guidance_copy (revision-owned)
@@ -107,7 +107,11 @@ the same resolver serves backoffice preview and `GET /guidance`. Administrators
 toggle applicability, edit bounded plain text, and publish an immutable
 revision. Stray rows remain stubs. Cruelty is catalogued, not public. There is
 no generic/unknown-kind row in the matrices, so publication validates catalogued
-injured kinds instead. Jurisdiction-pack phone snapshots, rollback UI, and
+injured kinds instead. Contact snapshots are administered through `/contacts`.
+Directory publication creates a new guidance revision with the current published
+copy and reviewed contacts; it cannot publish pending copy drafts. Both
+publishers serialize pointer updates, and copy publication retains the current
+directory snapshot. The public hash covers both versions. Rollback UI and
 IndexedDB last-known-valid storage are still later work. Stable semantic
 keys—not labels—allow wording to change without changing stored selections.
 
@@ -271,3 +275,58 @@ Injured instruction slots, bundled fallback import, draft/publish, and public
 - jurisdiction-pack phone snapshots for `call-contact`;
 - rollback UI, IndexedDB last-known-valid storage, and how stale/offline
   guidance is shown during an urgent flow.
+
+## All report flows (2026-10-22)
+
+All five situations create a capability-protected case and submit through the
+same command client. Situation-specific details remain in versioned private form
+snapshots, not event payloads or public status. The admin workspace displays
+stray behaviour, death indicators, cruelty circumstances and police outcomes,
+road/human/other details, reported outcomes, and explicit draft-closure results.
+Existing v1 injured/stray snapshots remain readable.
+
+The code owns fixed branching: cruelty documents the police outcome (or skips it
+for non-acute cases) and ends at W39; general other reports also end at W39.
+Road failures preserve the known location, collect identification, and reach
+W38. Requesting further injured-animal help keeps the original road case and
+service outcome. Closing a draft opens W26; an early draft first collects the
+required location. Closure records one outcome and optional description, and
+only clears the local case after the server accepts submission.
+
+`guidance_revisions.report_profiles` extends the existing publication with
+validated profiles for stray animals, suspicious/non-suspicious dead-animal
+findings, individual human-activity circumstances, and each road choice.
+Human-activity circumstances fall back to the general human-activity profile.
+Road profiles apply to all species because routing precedes identification. Each
+context can have a default profile and explicit animal-kind overrides. Profiles
+contain bounded plain-text warnings/instructions and up to 24 ordered contact
+options. An explicit empty species profile suppresses the default. No arbitrary
+branching predicates or executable code are allowed. Cruelty and general-other
+report boundaries are fixed; they do not inherit the injured guidance tree.
+
+Profile edits use the same optimistic content hash, draft/publish boundary and
+operator audit as the injured matrix. Canonical hashes include nonempty profile
+lists; empty lists preserve existing hashes. Guidance publication and directory
+publication both copy the profiles into the immutable revision. Customer drafts
+pin that publication and its contact directory in the local checkpoint,
+including before road identification. Admins can edit and preview these profiles
+in the situation tabs of the guidance screen.
+
+Figma documentation (file `Y6LY2VRpRoxNKNJEQACH6Y`, section `908:8091`) confirms
+these interaction boundaries, including W26 (`1097:5392`) and W38
+(`1596:15066`). The design refers to separate, unavailable business
+documentation for exhaustive species/service routing. No unverified service
+mappings have been seeded: an absent profile clearly explains the missing
+verified guidance and still permits documentation and submission. The existing
+injured fallback remains unchanged. Operators must review and publish the new
+profile content.
+
+A tab-local synchronous journal protects the latest controls if reload
+interrupts a queued IndexedDB write; case identity and timestamps prevent an
+older journal from replacing a newer durable checkpoint. Local checkpoints
+retain branch choices, police/service outcomes, visited help, form controls and
+navigation position across reloads. Retry preserves command IDs for the same
+submission; changed report attachments supersede a queued submission and compete
+at its expected version. A report already accepted by the server remains
+read-only. Files selected in the existing media picker are still local browser
+files; this change does not add binary media storage or AI identification.

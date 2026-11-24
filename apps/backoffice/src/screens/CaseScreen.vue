@@ -1,19 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import ReportFacts from "../components/ReportFacts.vue";
+import { ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { findAnimalKind } from "@animal-helper/guidance";
 import { t } from "@animal-helper/i18n";
 
-import { fetchCase, updateCase, type AdminCaseDetail } from "../api.js";
+import { useCaseWorkspace } from "../case-workspace.js";
 
 const route = useRoute();
-const error = ref<string | undefined>();
-const item = ref<AdminCaseDetail | undefined>();
-const urgency = ref<AdminCaseDetail["urgency"]>("normal");
-const nextStep = ref("");
-const deadline = ref("");
-const note = ref("");
+const {
+  error,
+  pending,
+  item,
+  urgency,
+  nextStep,
+  deadline,
+  note,
+  inspectionReferral,
+  load,
+  run,
+} = useCaseWorkspace(() => String(route.params.streamId ?? ""));
 const actionKind = ref("call");
 const actionResult = ref("");
 const volunteerName = ref("");
@@ -21,48 +28,9 @@ const volunteerTask = ref("");
 const volunteerResult = ref("");
 const recipient = ref("");
 const replyFileName = ref("");
-const inspectionReferral = ref("");
 const inspectionBy = ref("");
 const inspectionOutcome = ref("founded");
 const inspectionFindings = ref("");
-
-const streamId = (): string => String(route.params.streamId ?? "");
-
-const load = async () => {
-  error.value = undefined;
-  item.value = undefined;
-  try {
-    const detail = await fetchCase(streamId());
-    item.value = detail;
-    urgency.value = detail.work.urgency;
-    nextStep.value = detail.work.nextStep;
-    deadline.value = detail.work.deadline;
-    note.value = detail.work.note;
-    inspectionReferral.value = detail.work.referrals[0]?.id ?? "";
-  } catch {
-    error.value = t("backoffice.error.queue");
-  }
-};
-
-onMounted(() => {
-  void load();
-});
-
-watch(
-  () => route.params.streamId,
-  () => {
-    void load();
-  },
-);
-
-const run = async (body: unknown) => {
-  error.value = undefined;
-  try {
-    item.value = await updateCase(streamId(), body);
-  } catch {
-    error.value = t("backoffice.error.queue");
-  }
-};
 
 const species = (key: string): string =>
   key === ""
@@ -84,7 +52,7 @@ const situation = (value: string): string => {
 </script>
 
 <template>
-  <section v-if="item">
+  <section v-if="item" class="page case-screen">
     <p>
       <RouterLink :to="{ name: 'queue' }">{{
         t("backoffice.case.back")
@@ -100,11 +68,18 @@ const situation = (value: string): string => {
       {{ t(`backoffice.queue.mode.${item.mode}`) }} ·
       {{ t(`backoffice.queue.urgency.${item.urgency}`) }}
     </p>
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="error" class="error">
+      {{ error }}
+      <button type="button" :disabled="pending" @click="load">
+        {{ t("backoffice.case.reload") }}
+      </button>
+    </p>
     <p class="actions">
       <button
         v-if="item.mode === 'passive' || item.mode === 'review'"
+        class="button-primary"
         type="button"
+        :disabled="pending"
         @click="run({ type: 'take_over' })"
       >
         {{ t("backoffice.case.takeOver") }}
@@ -112,6 +87,7 @@ const situation = (value: string): string => {
       <button
         v-if="item.mode === 'review'"
         type="button"
+        :disabled="pending"
         @click="run({ type: 'leave_passive' })"
       >
         {{ t("backoffice.case.leave") }}
@@ -119,6 +95,7 @@ const situation = (value: string): string => {
       <button
         v-if="item.mode === 'active'"
         type="button"
+        :disabled="pending"
         @click="run({ type: 'close' })"
       >
         {{ t("backoffice.case.close") }}
@@ -126,7 +103,7 @@ const situation = (value: string): string => {
     </p>
 
     <h2>{{ t("backoffice.case.app") }}</h2>
-    <dl>
+    <dl class="case-facts">
       <dt>{{ t("backoffice.queue.animal") }}</dt>
       <dd>{{ species(item.facts.speciesKey) }}</dd>
       <dt>{{ t("backoffice.queue.place") }}</dt>
@@ -145,8 +122,50 @@ const situation = (value: string): string => {
       <dd>{{ item.facts.mediaCount }}</dd>
       <dt>{{ t("backoffice.queue.type") }}</dt>
       <dd>{{ item.facts.symptoms.join(", ") || t("backoffice.case.none") }}</dd>
+      <template v-if="item.facts.condition?.behaviour?.length">
+        <dt>{{ t("report.behaviourLabel") }}</dt>
+        <dd>
+          {{
+            item.facts.condition.behaviour
+              .map((value) => t(`report.behaviour.${value}`))
+              .join(", ")
+          }}
+        </dd>
+      </template>
+      <template
+        v-for="field in ['conscious', 'isJuvenile', 'collar'] as const"
+        :key="field"
+      >
+        <template v-if="item.facts.condition?.[field]">
+          <dt>{{ t(`report.${field}`) }}</dt>
+          <dd>{{ t(`report.answer.${item.facts.condition[field]}`) }}</dd>
+        </template>
+      </template>
       <dt>Opis</dt>
       <dd>{{ item.facts.description || t("backoffice.case.none") }}</dd>
+      <dt>{{ t("report.outcomeLabel") }}</dt>
+      <dd>
+        {{
+          item.facts.outcome
+            ? t(`report.outcome.${item.facts.outcome.status}`)
+            : t("backoffice.case.none")
+        }}
+      </dd>
+      <template v-if="item.facts.outcome?.reasons.length">
+        <dt>{{ t("report.reasonsLabel") }}</dt>
+        <dd>
+          <ul>
+            <li v-for="reason in item.facts.outcome.reasons" :key="reason">
+              {{ t(`report.reasons.${reason}`) }}
+            </li>
+          </ul>
+        </dd>
+      </template>
+      <template v-if="item.facts.outcome?.otherText">
+        <dt>{{ t("report.outcomeDescription") }}</dt>
+        <dd>{{ item.facts.outcome.otherText }}</dd>
+      </template>
+      <ReportFacts v-if="item.facts.report" :report="item.facts.report" />
       <dt>Oznamovateľ</dt>
       <dd>
         <template
@@ -218,7 +237,9 @@ const situation = (value: string): string => {
           {{ t("backoffice.case.note") }}
           <textarea v-model="note"></textarea>
         </label>
-        <button type="submit">{{ t("backoffice.case.save") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.save") }}
+        </button>
       </form>
 
       <h3>{{ t("backoffice.case.add") }}</h3>
@@ -228,8 +249,8 @@ const situation = (value: string): string => {
             type: 'add_action',
             kind: actionKind,
             result: actionResult,
-          }).then(() => {
-            actionResult = '';
+          }).then((saved) => {
+            if (saved) actionResult = '';
           })
         "
       >
@@ -247,7 +268,9 @@ const situation = (value: string): string => {
           {{ t("backoffice.case.actionResult") }}
           <input v-model="actionResult" type="text" required />
         </label>
-        <button type="submit">{{ t("backoffice.case.add") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.add") }}
+        </button>
       </form>
       <ul>
         <li v-for="action in item.work.actions" :key="action.id">
@@ -261,7 +284,9 @@ const situation = (value: string): string => {
           run({ type: 'add_step', text: nextStep, due: deadline })
         "
       >
-        <button type="submit">{{ t("backoffice.case.next") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.next") }}
+        </button>
       </form>
       <ul>
         <li v-for="step in item.work.steps" :key="step.id">
@@ -302,7 +327,9 @@ const situation = (value: string): string => {
           type="text"
           :placeholder="t('backoffice.case.actionResult')"
         />
-        <button type="submit">{{ t("backoffice.case.add") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.add") }}
+        </button>
       </form>
       <p v-if="item.work.volunteer">
         {{ item.work.volunteer.name }} · {{ item.work.volunteer.task }} ·
@@ -312,10 +339,14 @@ const situation = (value: string): string => {
       <h2>{{ t("backoffice.case.authority") }}</h2>
       <form
         @submit.prevent="
-          run({ type: 'add_referral', recipient, replyFileName }).then(() => {
-            recipient = '';
-            replyFileName = '';
-          })
+          run({ type: 'add_referral', recipient, replyFileName }).then(
+            (saved) => {
+              if (saved) {
+                recipient = '';
+                replyFileName = '';
+              }
+            },
+          )
         "
       >
         <input
@@ -329,7 +360,9 @@ const situation = (value: string): string => {
           type="text"
           :placeholder="t('backoffice.case.fileName')"
         />
-        <button type="submit">{{ t("backoffice.case.add") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.add") }}
+        </button>
       </form>
       <article v-for="referral in item.work.referrals" :key="referral.id">
         <h3>{{ referral.recipient }} · {{ referral.sentOn }}</h3>
@@ -382,29 +415,11 @@ const situation = (value: string): string => {
           :placeholder="t('backoffice.case.findings')"
           required
         ></textarea>
-        <button type="submit">{{ t("backoffice.case.inspection") }}</button>
+        <button type="submit" :disabled="pending">
+          {{ t("backoffice.case.inspection") }}
+        </button>
       </form>
     </template>
   </section>
   <p v-else-if="error" class="error">{{ error }}</p>
 </template>
-
-<style scoped>
-.actions,
-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: end;
-}
-
-dl {
-  display: grid;
-  grid-template-columns: 12rem 1fr;
-  gap: 0.35rem 1rem;
-}
-
-dt {
-  font-weight: 600;
-}
-</style>

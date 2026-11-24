@@ -20,6 +20,58 @@ type AppliedMigration = {
 export const migrationChecksum = (contents: string): string =>
   createHash("sha256").update(contents, "utf8").digest("hex");
 
+/** Inspect the ledger without creating tables, taking migration locks or writing. */
+export const inspectMigrations = async (
+  sql: Sql,
+  migrationsDirectory: string = defaultMigrationsDirectory,
+): Promise<{
+  applied: number;
+  pending: { filename: string; checksum: string }[];
+}> => {
+  const files = (await readdir(migrationsDirectory))
+    .filter((name) => MIGRATION_FILENAME.test(name))
+    .sort();
+  const reserved = await sql.reserve();
+  try {
+    await reserved.unsafe("begin isolation level repeatable read read only");
+    const [ledger] = await reserved`
+      select to_regclass('public.schema_migrations') is not null as exists
+    `;
+    const rows = ledger?.exists
+      ? await reserved<AppliedMigration[]>`
+          select filename, checksum from public.schema_migrations
+        `
+      : [];
+    const applied = new Map(rows.map((row) => [row.filename, row.checksum]));
+    const pending = [];
+    for (const filename of files) {
+      const checksum = migrationChecksum(
+        await readFile(path.join(migrationsDirectory, filename), "utf8"),
+      );
+      if (!applied.has(filename)) {
+        pending.push({ filename, checksum });
+      } else if (applied.get(filename) !== checksum) {
+        throw new Error(
+          `Applied migration ${filename} has changed or has no checksum`,
+        );
+      }
+    }
+    const missing = rows.filter((row) => !files.includes(row.filename));
+    if (missing.length > 0) {
+      throw new Error(
+        `Applied migrations missing from release: ${missing.map((row) => row.filename).join(", ")}`,
+      );
+    }
+    return { applied: rows.length, pending };
+  } finally {
+    try {
+      await reserved.unsafe("rollback");
+    } finally {
+      reserved.release();
+    }
+  }
+};
+
 export const applyMigrations = async (
   sql: Sql,
   migrationsDirectory: string = defaultMigrationsDirectory,

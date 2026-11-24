@@ -9,7 +9,8 @@ import postgres from "postgres";
 
 import { loadAdminConfig } from "./admin/config.js";
 import { loadApiEnv } from "./env.js";
-import { MAX_BODY_BYTES, serveFetch } from "./fetch-handler.js";
+import { serveFetch } from "./fetch-handler.js";
+import { bodyLimit } from "./body-limit.js";
 import { createPostgresGateway } from "./gateway.js";
 import { createApiHandler } from "./handler.js";
 
@@ -82,15 +83,16 @@ const nodeHeader = (
 
 const readNodeBody = async (
   request: IncomingMessage,
+  limit: number,
 ): Promise<Buffer | undefined> => {
   const chunks: Buffer[] = [];
   let total = 0;
   for await (const chunk of request as AsyncIterable<Buffer | string>) {
     const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
     total += buffer.length;
-    if (total > MAX_BODY_BYTES) {
+    if (total > limit) {
       request.destroy();
-      return Buffer.alloc(MAX_BODY_BYTES + 1);
+      return Buffer.alloc(limit + 1);
     }
     chunks.push(buffer);
   }
@@ -120,7 +122,7 @@ export const webRequestFromNode = async (
     return new Request(url, { method, headers });
   }
 
-  const body = await readNodeBody(request);
+  const body = await readNodeBody(request, bodyLimit(method, url.pathname));
   return new Request(url, {
     method,
     headers,

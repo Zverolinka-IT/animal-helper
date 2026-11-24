@@ -124,3 +124,25 @@ export {
   type InstructionKey,
   type InstructionPolarity,
 } from "./slots.js";
+export {
+  contactOptionsForKind,
+  contactOptionCells,
+} from "./contact-options.js";
+export {
+  isContactOptionInstruction,
+  isContactInstruction,
+  contactOptionPath,
+  slotsForInstruction,
+  polarityForInstruction,
+  sortOrderForInstruction,
+  type ContactOptionInstructionKey,
+} from "./slots.js";
+export {
+  parseReportProfiles,
+  reportGuidanceContext,
+  reportGuidanceItems,
+  reportGuidancePaths,
+  resolveReportGuidanceProfile,
+  profileItems,
+} from "./report-flows.js";
+export { contactPresentation } from "./contact-presentation.js";

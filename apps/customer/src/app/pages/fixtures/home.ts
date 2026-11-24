@@ -8,7 +8,6 @@ export const homeFixture: HomeView = {
   allowedActions: [
     'start-injured',
     'start-stray',
-    'start-dead',
     'start-cruelty',
     'start-other',
     'faq-capture',
@@ -21,7 +20,6 @@ export const homeFixture: HomeView = {
   previewActions: {
     'start-injured': { situation: 'injured', fromDraft: false, target: 'W03' },
     'start-stray': { situation: 'stray', fromDraft: false, target: 'W03' },
-    'start-dead': { situation: 'dead', fromDraft: false, target: 'W03' },
     'start-cruelty': { situation: 'cruelty', fromDraft: false, target: 'W27' },
     'start-other': { situation: 'other', fromDraft: false, target: 'W32' }
   },
@@ -38,7 +36,6 @@ export const homeFixture: HomeView = {
         appearance: 'primary'
       },
       { id: 'stray', label: 'Zviera je zatúlané', icon: 'help-stray', action: 'start-stray', appearance: 'primary' },
-      { id: 'dead', label: 'Nález mŕtveho zvieraťa', icon: 'help-dead', action: 'start-dead', appearance: 'primary' },
       {
         id: 'cruelty',
         label: 'Týranie/zanedbávanie zvieraťa',
@@ -49,7 +46,7 @@ export const homeFixture: HomeView = {
       { id: 'other', label: 'Iné', icon: 'other-cases', action: 'start-other', appearance: 'secondary' }
     ],
     anonymousNotice: 'Hlásenie môžete podať plne anonymne.',
-    about: { title: 'Zverolinka', description: 'Prvý kontakt pri záchrane zvierat.' },
+    about: { title: 'Zverolinka', description: 'Sprievodca pri záchrane zvierat.' },
     // Expanded content is deliberately labelled until approved copy is available.
     sections: [
       {
@@ -66,17 +63,17 @@ export const homeFixture: HomeView = {
             action: 'faq-cost'
           },
           { id: 'bird', label: 'Čo robiť, ak nájdem vypadnuté vtáča?', icon: 'faq-forward', action: 'faq-bird' },
-          { id: 'all', label: 'Prejsť na všetky FAQs', action: 'faq-all', accent: true }
+          { id: 'all', label: 'Prečítajte si viac', action: 'faq-all', accent: true }
         ]
       },
       {
         id: 'contact',
         title: 'Kontakt',
         expanded: true,
-        heading: 'Zverolinka o.z.',
-        paragraphs: [],
+        heading: 'Zvierací ombudsman',
+        paragraphs: ['Aliancia združení na ochranu zvierat, o.z.'],
         items: [
-          { id: 'address', label: 'Račianska 62, 821 08 Bratislava', icon: 'place' },
+          { id: 'address', label: 'Námestie SNP 463/3, 811 06 Bratislava-Staré Mesto', icon: 'place' },
           { id: 'email', label: 'info@zverolinka.sk', icon: 'email' },
           { id: 'web', label: 'www.zverolinka.sk', icon: 'web' }
         ]
@@ -94,10 +91,9 @@ export const homeFixture: HomeView = {
     socials: [
       { label: 'Facebook', icon: 'facebook', action: 'social-facebook' },
       { label: 'Instagram', icon: 'instagram', action: 'social-instagram' },
-      { label: 'LinkedIn', icon: 'linkedin', action: 'social-linkedin' },
-      { label: 'TikTok', icon: 'tiktok', action: 'social-tiktok' }
+      { label: 'LinkedIn', icon: 'linkedin', action: 'social-linkedin' }
     ],
-    copyright: '© 2026 Zverolinka. Všetky práva vyhradené.',
+    copyright: '© 2026 Aliancia združení na ochranu zvierat. Všetky práva vyhradené.',
     previewNotice: 'Ukážka s fixture dátami. Hlásenie ešte nie je možné odoslať.',
     actionNotice: 'Ukážkový režim: výber sa neodoslal. Ďalší krok doplníme po napojení backendu.'
   }

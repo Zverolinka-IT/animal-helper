@@ -1,8 +1,10 @@
 import type { Sql } from "postgres";
+import { adminCaseSearchSchema } from "@animal-helper/contracts";
 
 import {
   listQueueCases,
   OperatorAuthError,
+  OperatorManagementError,
   recordOperatorAudit,
 } from "@animal-helper/event-store";
 
@@ -18,19 +20,24 @@ import {
 import type { AdminConfig } from "./config.js";
 import { clearedSessionCookie, readCookie, sessionCookie } from "./cookies.js";
 import {
-  adminCaseDetail,
   adminCaseList,
   adminCommandFromBody,
   adminUpdateCase,
+  parseAdminCaseRequest,
 } from "./cases.js";
 import {
   adminGuidanceKind,
+  adminReportGuidance,
+  adminSaveReportGuidance,
   adminGuidanceSummary,
   adminPublishGuidance,
   adminSaveGuidanceCell,
+  adminSaveGuidanceContacts,
   GuidanceAdminError,
 } from "./guidance.js";
 import { requestOriginIsAllowed } from "./origin.js";
+import { handleOperatorInvitations } from "./operators.js";
+import { handleAdminContactDirectory } from "./contact-directory.js";
 
 export type AdminHandlerOptions = Readonly<{
   sql: Sql;
@@ -107,6 +114,30 @@ export const handleAdminRequest = async (
 
   try {
     if (
+      request.pathname === "/admin/contact-directory" ||
+      request.pathname === "/admin/contact-directory/import"
+    ) {
+      return await handleAdminContactDirectory(request, sql, sessionToken, now);
+    }
+    if (request.pathname.startsWith("/admin/operators/")) {
+      return await handleOperatorInvitations(
+        request,
+        options,
+        sessionToken,
+        now,
+      );
+    }
+    const reauthentication =
+      request.pathname === "/admin/auth/reauth/options" ||
+      request.pathname === "/admin/auth/reauth/verify";
+    if (
+      reauthentication &&
+      (sessionToken === undefined ||
+        (await readOperatorSession(sql, sessionToken, now)) === undefined)
+    ) {
+      return fail("unauthenticated", 401);
+    }
+    if (
       request.method === "POST" &&
       request.pathname === "/admin/auth/register/options"
     ) {
@@ -152,9 +183,15 @@ export const handleAdminRequest = async (
 
     if (
       request.method === "POST" &&
-      request.pathname === "/admin/auth/login/options"
+      (request.pathname === "/admin/auth/login/options" ||
+        request.pathname === "/admin/auth/reauth/options")
     ) {
-      const result = await createAuthenticationOptions(sql, config, now);
+      const result = await createAuthenticationOptions(
+        sql,
+        config,
+        now,
+        reauthentication ? sessionToken : undefined,
+      );
       return json(200, { options: result.options }, [
         sessionCookie(
           config.ceremonyCookie,
@@ -166,7 +203,8 @@ export const handleAdminRequest = async (
 
     if (
       request.method === "POST" &&
-      request.pathname === "/admin/auth/login/verify"
+      (request.pathname === "/admin/auth/login/verify" ||
+        request.pathname === "/admin/auth/reauth/verify")
     ) {
       if (ceremonyToken === undefined) {
         return fail("unauthenticated", 401);
@@ -181,6 +219,7 @@ export const handleAdminRequest = async (
         ceremonyToken,
         response,
         now,
+        reauthentication ? sessionToken : undefined,
       );
       return signedIn(result, config);
     }
@@ -204,22 +243,53 @@ export const handleAdminRequest = async (
         ]);
       }
       return json(200, {
-        operator: { id: session.operatorId, email: session.email },
+        operator: {
+          id: session.operatorId,
+          email: session.email,
+          canManageOperators: session.canManageOperators,
+        },
         environment: config.environment,
         expiresAt: session.expiresAt.toISOString(),
       });
+    }
+
+    if (request.pathname === "/admin/guidance/report-flows") {
+      const session = await readOperatorSession(sql, sessionToken, now);
+      if (!session) return fail("unauthenticated", 401);
+      return request.method === "GET"
+        ? await adminReportGuidance(sql)
+        : await adminSaveReportGuidance(sql, request.body, session.email, now);
     }
 
     const caseMatch = /^\/admin\/cases\/([0-9a-f-]{36})$/.exec(
       request.pathname,
     );
 
-    if (request.method === "GET" && request.pathname === "/admin/cases") {
+    const pageMatch = /^\/admin\/cases\/page\/(\d{1,6})$/.exec(
+      request.pathname,
+    );
+    const caseSearch =
+      request.method === "POST" && request.pathname === "/admin/cases/search";
+    if (
+      caseSearch ||
+      (request.method === "GET" &&
+        (request.pathname === "/admin/cases" || pageMatch !== null))
+    ) {
       const session = await readOperatorSession(sql, sessionToken, now);
       if (session === undefined) {
         return fail("unauthenticated", 401);
       }
-      const body = await adminCaseList(sql, session.email);
+      const filter = caseSearch
+        ? adminCaseSearchSchema.safeParse(request.body)
+        : undefined;
+      if (filter !== undefined && !filter.success)
+        return fail("invalid_request", 400);
+      const body = await adminCaseList(
+        sql,
+        session.email,
+        filter?.data.page ?? (pageMatch === null ? 0 : Number(pageMatch[1])),
+        filter?.data,
+      );
       await recordOperatorAudit(sql, {
         operatorEmail: session.email,
         action: "case_list_read",
@@ -237,26 +307,14 @@ export const handleAdminRequest = async (
       if (streamId === undefined) {
         return fail("not_found", 404);
       }
-      const detail = await adminCaseDetail(sql, streamId, session.email);
-      if (detail === undefined) {
-        return fail("not_found", 404);
-      }
-      const seen = adminCommandFromBody(
-        { type: "seen" },
-        session.email,
-        now,
-        () => crypto.randomUUID(),
-      );
-      if (seen !== undefined) {
-        await adminUpdateCase(sql, streamId, session.email, seen);
-      }
-      await recordOperatorAudit(sql, {
-        operatorEmail: session.email,
-        action: "case_detail_read",
-        outcome: "accepted",
+      const updated = await adminUpdateCase(
+        sql,
         streamId,
-      });
-      return json(200, await adminCaseDetail(sql, streamId, session.email));
+        session.email,
+        { type: "seen", at: now.toISOString(), email: session.email },
+        now,
+      );
+      return updated.ok ? json(200, updated.case) : fail("not_found", 404);
     }
 
     if (request.method === "POST" && caseMatch !== null) {
@@ -265,8 +323,10 @@ export const handleAdminRequest = async (
         return fail("unauthenticated", 401);
       }
       const streamId = caseMatch[1];
+      const parsed = parseAdminCaseRequest(request.body);
+      if (!parsed.success) return fail("invalid_request", 400);
       const command = adminCommandFromBody(
-        request.body,
+        parsed.data.command,
         session.email,
         now,
         () => crypto.randomUUID(),
@@ -279,14 +339,11 @@ export const handleAdminRequest = async (
         streamId,
         session.email,
         command,
+        now,
+        parsed.data,
       );
-      await recordOperatorAudit(sql, {
-        operatorEmail: session.email,
-        action: `case_${command.type}`,
-        outcome: updated.ok ? "accepted" : "rejected",
-        streamId,
-      });
       if (!updated.ok) {
+        if (updated.code === "conflict") return fail("conflict", 409);
         return fail(
           updated.code === "not_found" ? "not_found" : "invalid_request",
           updated.code === "not_found" ? 404 : 400,
@@ -356,6 +413,20 @@ export const handleAdminRequest = async (
 
     if (
       request.method === "POST" &&
+      request.pathname === "/admin/guidance/contacts"
+    ) {
+      const session = await readOperatorSession(sql, sessionToken, now);
+      if (!session) return fail("unauthenticated", 401);
+      return await adminSaveGuidanceContacts(
+        sql,
+        request.body,
+        session.email,
+        now,
+      );
+    }
+
+    if (
+      request.method === "POST" &&
       request.pathname === "/admin/guidance/publish"
     ) {
       const session = await readOperatorSession(sql, sessionToken, now);
@@ -365,7 +436,26 @@ export const handleAdminRequest = async (
       return await adminPublishGuidance(sql, request.body, session.email, now);
     }
   } catch (error) {
+    if (error instanceof OperatorManagementError) {
+      const session = await readOperatorSession(sql, sessionToken, now);
+      if (session !== undefined)
+        await recordOperatorAudit(sql, {
+          operatorEmail: session.email,
+          action: "operator_management_rejected",
+          outcome: "rejected",
+          errorCode: error.code,
+        });
+      return json(error.status, { ok: false, error: { code: error.code } });
+    }
     if (error instanceof OperatorAuthError) {
+      const session = await readOperatorSession(sql, sessionToken, now);
+      if (session !== undefined)
+        await recordOperatorAudit(sql, {
+          operatorEmail: session.email,
+          action: "operator_authentication_rejected",
+          outcome: "rejected",
+          errorCode: error.code,
+        });
       return fail(error.code, 401, [
         clearedSessionCookie(config.ceremonyCookie),
       ]);

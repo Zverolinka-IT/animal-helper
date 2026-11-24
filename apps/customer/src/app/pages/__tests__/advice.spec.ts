@@ -1,5 +1,5 @@
 import BaseIcon from '@/libs/components/base-icon.vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { expect, it, vi } from 'vitest'
 import { adviceFixture, warningsOnlyFixture } from '../fixtures/advice'
 import PageAdvice from '../page-advice.vue'
@@ -27,6 +27,7 @@ it('renders red-only and combined variants from ordered data', async () => {
     .findAll('button')
     .find(button => button.text() === view.copy.acknowledge)!
     .trigger('click')
+  await flushPromises()
   expect(push).toHaveBeenCalledWith({ name: view.confirmTarget })
   await wrapper
     .findAll('button')

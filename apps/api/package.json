@@ -22,6 +22,9 @@
     "@animal-helper/domain": "workspace:*",
     "@animal-helper/event-store": "workspace:*",
     "@animal-helper/guidance": "workspace:*",
+    "@animal-helper/jurisdictions": "workspace:*",
+    "@animal-helper/i18n": "workspace:*",
+    "@animal-helper/search": "workspace:*",
     "@simplewebauthn/server": "13.2.2",
     "postgres": "3.4.8"
   },

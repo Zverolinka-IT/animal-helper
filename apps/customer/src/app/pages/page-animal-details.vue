@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { flowRoute } from '../flow-route'
 import PageActions from '../components/page-actions.vue'
 import PageIntro from '../components/page-intro.vue'
 import ValidationMessage from '../components/validation-message.vue'
@@ -8,7 +9,7 @@ import { useRouter } from 'vue-router'
 import { previewSession } from '../preview-flow'
 import { flowActions } from '../flow-client'
 import { backWithinFlow } from '../instruction-navigation'
-import { catalogueAnimals } from '../animal-catalogue'
+import { catalogueAnimals, reportedSpeciesId } from '../animal-catalogue'
 import { reconcileDetailAnswers } from '../detail-answers'
 import type { AnimalBranch } from './fixtures/animal-groups'
 import type { AnimalDetailsView, DetailQuestion } from './fixtures/animal-details'
@@ -25,9 +26,16 @@ const form = ref<HTMLFormElement>()
 const validation = useFormValidation(() => props.view.validation)
 const failed = computed(() => props.view.showAnimal !== false && !!previewSession.value?.identificationFailed)
 const identification = computed(() => previewSession.value?.animalIdentification)
-const animal = computed(() =>
-  catalogueAnimals(props.catalogue).find(item => item.id === identification.value?.speciesId)
-)
+const animal = computed(() => {
+  const selected = identification.value
+  if (selected?.kind !== 'species') return undefined
+  const animals = catalogueAnimals(props.catalogue)
+  const path = selected.path.join('/')
+  return (
+    animals.find(item => reportedSpeciesId(item) === selected.speciesId && item.path.join('/') === path) ??
+    animals.find(item => reportedSpeciesId(item) === selected.speciesId)
+  )
+})
 const animalLabel = computed(
   () =>
     animal.value?.label ??
@@ -103,7 +111,7 @@ async function confirm() {
   }
   const pending = flowActions.details(answers.value, props.answerScope, props.view.confirmTarget)
   const target = pending instanceof Promise ? await pending : pending
-  if (target) void router.push({ name: target })
+  if (target) void router.push(flowRoute(target))
 }
 function edit() {
   if (!props.view.allowedActions.includes('edit')) return
@@ -219,6 +227,7 @@ function edit() {
             :placeholder="question.placeholder",
             :required="question.required",
             rows="4",
+            maxlength="2000",
             class="w-full resize-none rounded-control border border-primary bg-surface p-3 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary-light)]",
             @input="validation.clear(question.id)"
           )
@@ -251,6 +260,7 @@ function edit() {
                   :placeholder="option.description",
                   :disabled="question.disabled || option.disabled || !selected(question, option.id)",
                   rows="4",
+                  maxlength="2000",
                   class="w-full resize-none rounded-control border border-primary bg-surface p-3 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-primary-light)]",
                   @input="validation.clear(question.id + ':' + option.id)"
                 )

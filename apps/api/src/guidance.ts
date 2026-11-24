@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   bundledContentHash,
+  assertPublishableDocument,
   bundledGuidanceDocument,
   bundledPublicGuidance,
   canonicalizeGuidanceDocument,
@@ -15,6 +16,7 @@ import {
   loadGuidanceDocument,
   loadGuidanceDraft,
   loadGuidancePublication,
+  loadContactDirectoryRelease,
 } from "@animal-helper/event-store";
 import type { Sql } from "postgres";
 
@@ -44,11 +46,24 @@ export const publicGuidanceFor = async (
       return bundledPublicGuidance();
     }
     const document = parseGuidanceDocument(stored);
-    return resolvePublicGuidance(document, {
+    assertPublishableDocument(document);
+    const guidance = resolvePublicGuidance(document, {
       revisionId: published.revisionId,
       contentHash: published.contentHash,
       source: "published",
     });
+    const contactDirectory = published.directoryRevisionId
+      ? await loadContactDirectoryRelease(sql, published.directoryRevisionId)
+      : undefined;
+    return contactDirectory
+      ? {
+          ...guidance,
+          contactDirectory,
+          contentHash: createHash("sha256")
+            .update(`${guidance.contentHash}:${contactDirectory.revisionId}`)
+            .digest("hex"),
+        }
+      : guidance;
   } catch {
     return bundledPublicGuidance();
   }

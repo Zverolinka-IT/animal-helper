@@ -9,6 +9,43 @@ import {
 } from "../src/admin-case.js";
 
 describe("admin case workspace", () => {
+  it("clears superseded species, free text and coordinates when the reporter corrects them", () => {
+    const facts = appFactsFromRecords([
+      {
+        kind: "form_snapshot",
+        payload: {
+          species: { kindKey: "domestic_cat" },
+          condition: {
+            symptoms: ["other"],
+            otherText: "Synthetic earlier text",
+          },
+        },
+      },
+      {
+        kind: "location",
+        payload: {
+          address: "Synthetic old address",
+          coordinates: { latitude: 48, longitude: 17 },
+        },
+      },
+      {
+        kind: "form_snapshot",
+        payload: {
+          species: { source: "failed" },
+          condition: { symptoms: ["unknown"] },
+        },
+      },
+      { kind: "location", payload: { address: "Synthetic corrected address" } },
+    ]);
+    expect(facts).toMatchObject({
+      speciesKey: "",
+      description: "",
+      address: "Synthetic corrected address",
+      symptoms: ["unknown"],
+    });
+    expect(facts.latitude).toBeUndefined();
+    expect(facts.longitude).toBeUndefined();
+  });
   it("reads the reporter payload and hides the newsletter flag", () => {
     const facts = appFactsFromRecords([
       {
@@ -100,4 +137,26 @@ describe("admin case workspace", () => {
       ),
     ).toBe("ZV-2026-6F1B0C2E");
   });
+});
+
+it("does not retain a superseded outcome when a newer snapshot has no outcome", async () => {
+  const { syntheticFormSnapshot } = await import("@animal-helper/contracts");
+  const previous = {
+    kind: "form_snapshot",
+    payload: {
+      ...syntheticFormSnapshot,
+      outcome: {
+        status: "unresolved",
+        reasons: ["other"],
+        otherText: "Old reason",
+      },
+    },
+  };
+  expect(appFactsFromRecords([previous]).outcome?.otherText).toBe("Old reason");
+  expect(
+    appFactsFromRecords([
+      previous,
+      { kind: "form_snapshot", payload: syntheticFormSnapshot },
+    ]).outcome,
+  ).toBeUndefined();
 });

@@ -1,5 +1,7 @@
 import { animalKinds, findAnimalKind } from "./catalog.js";
 import { flowFor } from "./flows.js";
+import type { GuidanceItem } from "./content.js";
+import { contactOptionPath, isContactOptionInstruction } from "./slots.js";
 import {
   groupKeys,
   type AnimalKind,
@@ -211,6 +213,7 @@ const withThanks = (
 export const customerWalkableSteps = (
   situation: SituationKey,
   kindKey: string | undefined,
+  items: readonly GuidanceItem[] = [],
 ): readonly CustomerWalkableStep[] => {
   if (situation === "stray") {
     return implementedSkeleton();
@@ -225,7 +228,26 @@ export const customerWalkableSteps = (
     return prefixUntilDetails();
   }
 
-  return withThanks(withPhotoStep(collapseWalkableSteps(resolved.steps)));
+  const steps = withThanks(
+    withPhotoStep(collapseWalkableSteps(resolved.steps)),
+  );
+  const contacts = items.filter((item) =>
+    isContactOptionInstruction(item.instructionKey),
+  );
+  if (!contacts.length) return steps;
+  const contactPaths = new Set(["/w15", "/w18", "/w19", "/w20", "/w21"]);
+  const first = steps.findIndex((step) => contactPaths.has(step.path));
+  const dynamic = contacts.map((item): CustomerWalkableStep => ({
+    path: contactOptionPath(item.instructionKey as `contact.option.${string}`),
+    screenKeys: ["w15"],
+    status: "implemented",
+  }));
+  const before = first < 0 ? steps.length - 2 : first;
+  return [
+    ...steps.slice(0, before),
+    ...dynamic,
+    ...steps.slice(before).filter((step) => !contactPaths.has(step.path)),
+  ];
 };
 
 export const matrixWalkableSteps = (
@@ -240,8 +262,9 @@ export const nextCustomerPath = (
   currentPath: string,
   situation: SituationKey,
   kindKey: string | undefined,
+  items: readonly GuidanceItem[] = [],
 ): string | undefined => {
-  const steps = customerWalkableSteps(situation, kindKey);
+  const steps = customerWalkableSteps(situation, kindKey, items);
   const index = steps.findIndex((step) => step.path === currentPath);
   if (index === -1 || index >= steps.length - 1) {
     return undefined;

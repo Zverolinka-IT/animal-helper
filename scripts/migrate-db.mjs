@@ -30,7 +30,7 @@ const stripTypesResolve = pathToFileURL(
 ).href;
 
 /**
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, run?: typeof runCommand }} [options]
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, run?: typeof runCommand, check?: boolean }} [options]
  */
 export async function runDatabaseMigrations(options = {}) {
   const cwd = path.resolve(options.cwd ?? repositoryRoot);
@@ -48,9 +48,18 @@ export async function runDatabaseMigrations(options = {}) {
 
   await run(
     process.execPath,
-    ["--experimental-strip-types", "--import", stripTypesResolve, migrateCli],
+    [
+      "--experimental-strip-types",
+      "--import",
+      stripTypesResolve,
+      migrateCli,
+      ...(options.check ? ["--check"] : []),
+    ],
     { cwd, environment },
   );
+
+  // A status check must never create or migrate the integration database.
+  if (options.check) return;
 
   const testUrl = resolveIntegrationDatabaseUrl(environment);
   if (testUrl === undefined) {
@@ -124,7 +133,11 @@ if (
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    await runDatabaseMigrations();
+    const args = process.argv.slice(2);
+    if (args.some((arg) => arg !== "--check")) {
+      throw new Error("Usage: migrate-db.mjs [--check]");
+    }
+    await runDatabaseMigrations({ check: args.includes("--check") });
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

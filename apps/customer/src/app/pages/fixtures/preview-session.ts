@@ -1,3 +1,4 @@
+import type { ContactServiceKey, ReportOutcome } from '@animal-helper/contracts'
 import { ref } from 'vue'
 import type { AnimalIdentification } from '../../animal-identification'
 import type { LocationPoint } from '../../contracts/forms'
@@ -10,11 +11,17 @@ export const previewSession = ref<{
   otherSituation?: 'road' | 'human' | 'other'
   otherReport?: { reasons: string[]; description?: string }
   documentingOther?: boolean
+  animalHelpRequested?: boolean
+  closingDraft?: boolean
+  reportResumeScreen?: string
+  closureReturnTarget?: string
   crueltyReport?: { outcome: 'reported' | 'not-reported'; reasons: string[]; description?: string }
   editingAnimal?: boolean
   identificationFailed?: boolean
   adviceReady?: boolean
-  thankYouReturnTarget?: 'W15' | 'W18' | 'W20' | 'W21' | 'W36' | 'W22' | 'W09'
+  completionOutcome?: ReportOutcome['status']
+  visitedHelp?: (ContactServiceKey | 'self')[]
+  thankYouReturnTarget?: string
   animalDetails?: Record<string, string | string[]>
   roadDetails?: Record<string, string | string[]>
   location?: LocationPoint
@@ -37,6 +44,7 @@ export function confirmPreviewLocation(location: LocationPoint) {
   if (session.location?.lat !== location.lat || session.location?.lng !== location.lng) {
     session.adviceReady = false
     delete session.thankYouReturnTarget
+    delete session.completionOutcome
     delete session.otherReport
     delete session.documentingOther
     // Road contacts have their own availability guard, independent of adviceReady.
@@ -52,6 +60,7 @@ export function confirmAnimalIdentification(identification: AnimalIdentification
   session.editingAnimal = false
   session.identificationFailed = false
   session.adviceReady = false
+  delete session.completionOutcome
 }
 
 // One suspended case for the local preview; files and form drafts stay in memory.

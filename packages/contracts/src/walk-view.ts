@@ -20,7 +20,13 @@ export const walkFieldErrorSchema = z.strictObject({
 
 export type WalkFieldError = z.infer<typeof walkFieldErrorSchema>;
 
-export const walkSituationTypeSchema = z.enum(["injured", "stray"]);
+export const walkSituationTypeSchema = z.enum([
+  "injured",
+  "stray",
+  "dead",
+  "cruelty",
+  "other",
+]);
 
 export const walkKindOptionSchema = z.strictObject({
   key: z
@@ -65,7 +71,7 @@ export const situationWalkViewSchema = z.strictObject({
   screen: z.literal("situation"),
   path: z.literal("/w01"),
   props: z.strictObject({
-    situations: z.array(walkSituationTypeSchema).min(1).max(2),
+    situations: z.array(walkSituationTypeSchema).min(1).max(5),
   }),
 });
 

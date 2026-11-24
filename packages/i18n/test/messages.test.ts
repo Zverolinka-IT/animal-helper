@@ -7,7 +7,7 @@ describe("sk-SK customer shell copy", () => {
     expect(t("customer.appName")).toBe("Zvierací ombudsman");
     expect(t("customer.contact.submit")).toBe("Odoslať a ukončiť");
     expect(t("customer.durability.received")).toBe("Nahlásenie bolo prijaté");
-    expect(t("backoffice.appName")).toBe("Zvierací ombudsman — správa");
+    expect(t("backoffice.appName")).toBe("Zverolinka — správa");
     expect(t("backoffice.nav.guidance")).toBe("Matica sprievodcu");
     expect(t("catalog.group.domestic")).toBe("Domáce");
     expect(t("backoffice.error.passkeyOrigin")).toContain("localhost");

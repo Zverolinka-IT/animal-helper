@@ -1,5 +1,9 @@
 /* Tailwind Forms owns the browser reset; customer design tokens own the theme.
  * File pickers, hidden inputs, ranges and buttons deliberately remain untouched. */
+/* Keep focused controls clear of the shared sticky header and confirmation. */
+html:has(.customer-app) {
+  scroll-padding-block: calc(6rem + env(safe-area-inset-top)) calc(6rem + env(safe-area-inset-bottom));
+}
 @layer components {
   .customer-app
     :is(
@@ -24,7 +28,8 @@
     background-color: var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-form);
-    font-size: var(--text-body);
+    /* Prevent focus zoom in iOS, including landscape and hybrid input devices. */
+    font-size: max(16px, var(--text-body));
     line-height: var(--text-body--line-height);
     font-weight: 400;
     min-height: 44px;

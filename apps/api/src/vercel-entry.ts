@@ -6,7 +6,7 @@ const isWebRequest = (value: object): value is Request =>
   "headers" in value &&
   typeof (value as { headers?: { get?: unknown } }).headers?.get === "function";
 
-// Bundled to api/index.mjs during the Vercel build. The admin app and this
+// Bundled to dist/vercel-entry.mjs during the Vercel build. The admin app and this
 // function share one origin so passkey cookies stay first-party (ADR 0009).
 export default function vercelHandler(
   request: Request | IncomingMessage,

@@ -31,13 +31,13 @@ export const animalDetailsFixture: AnimalDetailsView = {
     preview: 'Lokálna ukážka: otázky a možnosti sú testovacie dáta, nie odpoveď servera.',
     completed: 'Údaje sú uložené lokálne. Možnosti pomoci zatiaľ nie sú zapojené.'
   },
-  // Requiredness is a temporary preview rule, pending backend validation contract.
+  // Figma 989:2749: detail questions are optional; unknown remains exclusive.
   questions: [
     {
       id: 'symptoms',
       label: 'Čo je zvieraťu?',
       kind: 'multiple',
-      required: true,
+      required: false,
       options: [
         { id: 'bleeding', label: 'Krváca' },
         { id: 'poisoned', label: 'Zviera je pravdepodobne otrávené' },
@@ -53,7 +53,7 @@ export const animalDetailsFixture: AnimalDetailsView = {
       id: 'conscious',
       label: 'Je zviera pri vedomí?',
       kind: 'single',
-      required: true,
+      required: false,
       options: [
         { id: 'yes', label: 'Áno' },
         { id: 'no', label: 'Nie' },
@@ -64,7 +64,7 @@ export const animalDetailsFixture: AnimalDetailsView = {
       id: 'juvenile',
       label: 'Ide o mláďa?',
       kind: 'single',
-      required: true,
+      required: false,
       options: [
         { id: 'yes', label: 'Áno' },
         { id: 'no', label: 'Nie' },

@@ -13,9 +13,11 @@ Authoritative seed sources to review during implementation:
 
 Internal routing keys derived from the case matrices (`rvps`, `rvps_sizp`,
 `sop_rescue`, `municipality_capture`, and others) live in
-`@animal-helper/guidance`. Directory entries with telephone numbers and
-addresses still belong here, with source URL, retrieval date, effective date if
-known, reviewer, and version.
+`@animal-helper/guidance`. Directory entries are administered through
+`/contacts`; immutable releases live in `ah.contact_directory_revisions`.
+Enabled entries require a source URL, verification date and review deadline.
+Publication audit records the operator, and each guidance revision pins the
+directory release.
 
 Do not copy addresses or forms without recording source URL, retrieval date,
 effective date if known, reviewer, and version. Authority data can change

@@ -39,10 +39,10 @@ it('renders independent group and description errors without discarding answers'
   expect(push).toHaveBeenCalledWith({ name: 'W14' })
   wrapper.unmount()
 })
-it('renders supplied questions, validates answers and makes unknown exclusive', async () => {
+it('allows unanswered details and makes unknown exclusive', async () => {
   const wrapper = setup()
   expect(wrapper.text()).toContain('Mačka')
-  expect(wrapper.get('button[type=submit]').attributes('disabled')).toBeDefined()
+  expect(wrapper.get('button[type=submit]').attributes('disabled')).toBeUndefined()
   await wrapper.get('input[value=bleeding]').setValue(true)
   await wrapper.get('input[name=symptoms][value=unknown]').setValue(true)
   expect(previewSession.value!.animalDetails!.symptoms).toEqual(['unknown'])
