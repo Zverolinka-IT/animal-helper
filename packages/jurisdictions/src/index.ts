@@ -246,3 +246,5 @@ export { authorityContactsFor, districtForPlace } from "./territory.js";
 export type { AuthorityContact, AuthorityService } from "./territory.js";
 export { veterinaryClinicsFor } from "./clinics.js";
 export type { VeterinaryClinic } from "./clinics.js";
+export { municipalityOfficeFor } from "./municipalities.js";
+export type { MunicipalityOffice } from "./municipalities.js";

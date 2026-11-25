@@ -8,6 +8,7 @@ import {
   selectContacts,
   veterinaryClinicsFor,
   type AuthorityService,
+  type MunicipalityOffice,
   type VeterinaryClinic
 } from '@animal-helper/jurisdictions'
 import type { AdviceBlock, AdvicePanel, AdviceView } from '../pages/fixtures/advice'
@@ -21,6 +22,7 @@ export type ContactContext = {
   location?: ContactCoordinates | undefined
   district?: string | undefined
   animalGroups?: readonly string[] | undefined
+  municipality?: MunicipalityOffice | undefined
   now: Date
 }
 
@@ -48,8 +50,21 @@ function authorityBlocks(service: AuthorityService, district: string | undefined
   })
 }
 
+function municipalityCard(office: MunicipalityOffice): ContactBlock {
+  const phone = phoneHref(office.phone)
+  return {
+    id: `municipality-${office.district}-${office.name}`,
+    kind: 'contact',
+    title: office.name,
+    ...(phone ? { phone: { label: office.phone, href: phone } } : {}),
+    ...(office.note ? { note: office.note } : {})
+  }
+}
+
 function contactBlocks(service: ContactServiceKey, id: string, context: ContactContext): ContactBlock[] {
   const contacts = selectContacts(context.directory, service, context.location, context.now, context.district)
+  if (!contacts.length && service === 'municipality_capture' && context.municipality?.phone)
+    return [municipalityCard(context.municipality)]
   if (!contacts.length)
     return [
       {
@@ -97,13 +112,22 @@ const veterinaryNotice: ContactBlock = {
     'Ak si objednáte ošetrenie veterinára, náklady budete musieť uhradiť vy, pokiaľ sa vopred nedohodnete inak. Niektoré veterinárne pracoviská poskytujú aj pohotovosť a výjazdy. Vopred si telefonicky overte ich dostupnosť a prípadné príplatky.'
 }
 
+function distanceLabel(distanceKm: number) {
+  return distanceKm < 1
+    ? `${Math.round(distanceKm * 1000)} m`
+    : `${new Intl.NumberFormat('sk', { maximumFractionDigits: 1 }).format(distanceKm)} km`
+}
+
 function veterinaryBlock(clinic: VeterinaryClinic): ContactBlock {
   const phone = phoneHref(clinic.phone)
-  const destination = clinic.address.replace(/\n/gu, ', ')
+  const destination = clinic.coordinates
+    ? `${clinic.coordinates.latitude},${clinic.coordinates.longitude}`
+    : clinic.address.replace(/\n/gu, ', ')
   return {
     id: `clinic-${clinic.id}`,
     kind: 'contact',
     title: clinic.name,
+    ...(clinic.distanceKm === undefined ? {} : { distance: distanceLabel(clinic.distanceKm) }),
     ...(clinic.address ? { address: clinic.address } : {}),
     ...(phone ? { phone: { label: clinic.phone, href: phone } } : {}),
     ...(destination
@@ -122,9 +146,11 @@ export function presentVeterinaryClinics(
   view: InstructionsView,
   district: string | undefined,
   groups: readonly string[],
-  now: Date
+  now: Date,
+  location?: ContactCoordinates
 ): InstructionsView {
-  const clinics = veterinaryClinicsFor(district, groups, now).map(veterinaryBlock)
+  const listed = veterinaryClinicsFor(district, groups, now, location)
+  const clinics = listed.map(veterinaryBlock)
   const shown: ContactBlock[] = clinics.length
     ? clinics
     : [
@@ -142,8 +168,9 @@ export function presentVeterinaryClinics(
     copy: {
       ...view.copy,
       title: 'Môžete kontaktovať veterinárnu kliniku',
-      description:
-        'Kliniky v tomto okrese, ktoré podľa zoznamu ošetrujú túto skupinu zvierat. Pri každej je dnešný ordinačný čas.',
+      description: listed.some(clinic => clinic.distanceKm !== undefined)
+        ? 'Kliniky v tomto okrese, ktoré podľa zoznamu ošetrujú túto skupinu zvierat. Pri každej je dnešný ordinačný čas a vzdušná vzdialenosť od nahláseného miesta.'
+        : 'Kliniky v tomto okrese, ktoré podľa zoznamu ošetrujú túto skupinu zvierat. Pri každej je dnešný ordinačný čas.',
       preview: ''
     },
     blocks: [veterinaryNotice, ...shown]
@@ -187,6 +214,13 @@ export function presentDirectoryContacts(view: InstructionsView, context: Contac
       copy: { ...view.copy, preview: '' },
       blocks: authority === 'hunting_manager_or_opk' ? [...notices, ...shown] : [...shown, ...notices]
     }
+  }
+  if (view.screen === 'W15a' || view.screen === 'W15e' || view.screen === 'W15f') {
+    const cards = contactBlocks('municipality_capture', view.screen, context)
+    const kept = view.blocks.filter(
+      block => block.kind !== 'contact' || ('phone' in block && block.phone?.label === '159')
+    )
+    return { ...view, copy: { ...view.copy, preview: '' }, blocks: [...cards, ...kept] }
   }
   const service = services[view.screen]
   if (!service) return view

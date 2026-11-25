@@ -5,6 +5,7 @@ import {
 import { describe, expect, it } from "vitest";
 import {
   authorityContactsFor,
+  municipalityOfficeFor,
   contactAvailability,
   distanceKm,
   districtForPlace,
@@ -233,6 +234,24 @@ describe("Slovak opening hours", () => {
   });
 });
 
+describe("municipality offices", () => {
+  it("returns the phones and police flag for a uniquely named municipality", () => {
+    expect(municipalityOfficeFor("Dolné Orešany")).toMatchObject({
+      name: "Dolné Orešany",
+      district: "Trnava",
+      phone: "033 558 21 01",
+      note: "0910 571 826",
+      police: false,
+    });
+    expect(municipalityOfficeFor("Banská Bystrica")).toMatchObject({
+      police: true,
+      phone: "048 4330 321",
+    });
+    expect(municipalityOfficeFor("Breznička")).toBeUndefined();
+    expect(municipalityOfficeFor(undefined)).toBeUndefined();
+  });
+});
+
 describe("veterinary clinics", () => {
   const saturday = new Date("2026-11-21T10:00:00+01:00");
 
@@ -245,6 +264,22 @@ describe("veterinary clinics", () => {
       district: "Trnava",
     });
     expect(clinics.some((clinic) => clinic.district !== "Trnava")).toBe(false);
+    const nearest = veterinaryClinicsFor("Trnava", ["Domáce"], saturday, {
+      latitude: 48.433,
+      longitude: 17.43,
+    });
+    expect(nearest[0]?.name).toContain("Zvončín");
+    expect(nearest[0]?.distanceKm).toBeLessThan(
+      nearest.at(-1)?.distanceKm ?? 0,
+    );
+    expect(
+      nearest.every(
+        (clinic, index) =>
+          index === 0 ||
+          (nearest[index - 1]?.distanceKm ?? Number.POSITIVE_INFINITY) <=
+            (clinic.distanceKm ?? Number.POSITIVE_INFINITY),
+      ),
+    ).toBe(true);
     const birds = veterinaryClinicsFor("Trnava", ["Vtáky"], saturday);
     expect(birds.some((clinic) => clinic.name.startsWith("FG Vet"))).toBe(
       false,

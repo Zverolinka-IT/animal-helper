@@ -28,7 +28,7 @@ import {
   type PublicGuidance,
   type WalkFacts
 } from '@animal-helper/guidance'
-import { districtForPlace, selectContacts } from '@animal-helper/jurisdictions'
+import { districtForPlace, municipalityOfficeFor, selectContacts } from '@animal-helper/jurisdictions'
 import type { AnimalIdentification } from '../animal-identification'
 import type { LocationPoint } from '../contracts/forms'
 import type { AdvicePanel, AdviceView } from '../pages/fixtures/advice'
@@ -370,9 +370,10 @@ export function createWalkActions(dependencies: WalkDependencies) {
 
   function injuredOptions() {
     const symptoms = previewSession.value?.animalDetails?.symptoms
+    const office = municipalityOfficeFor(previewSession.value?.location?.label)
     return {
       collision: Array.isArray(symptoms) && symptoms.includes('collision'),
-      municipalPolice: false
+      municipalPolice: office?.police === true
     }
   }
 
@@ -597,12 +598,14 @@ export function createWalkActions(dependencies: WalkDependencies) {
       const optionPath = selectedOptionId ? (`/contacts/${selectedOptionId}` as const) : undefined
       const path = optionPath ?? '/' + view.screen.toLowerCase()
       const location = previewSession.value?.location
-      const district = location ? districtForPlace(location.label) : undefined
+      const municipality = municipalityOfficeFor(location?.label)
+      const district = (location ? districtForPlace(location.label) : undefined) ?? municipality?.district
       const context = {
         guidanceSource: activeGuidance?.source,
         directory: activeGuidance?.contactDirectory,
         location: location ? { latitude: location.lat, longitude: location.lng } : undefined,
         ...(district ? { district } : {}),
+        ...(municipality ? { municipality } : {}),
         now: new Date()
       }
       if (view.screen === 'W18' && facts.situationType === 'injured') {
@@ -614,7 +617,7 @@ export function createWalkActions(dependencies: WalkDependencies) {
           context.district
         )
         if (!published.length)
-          return presentVeterinaryClinics(view, district, clinicGroupsFor(facts.kindKey), context.now)
+          return presentVeterinaryClinics(view, district, clinicGroupsFor(facts.kindKey), context.now, context.location)
       }
       if (view.screen === 'W36' && profileContext()?.startsWith('road-') && !lastRoadOption)
         return {
